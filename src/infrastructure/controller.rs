@@ -4,7 +4,7 @@ use rust_db_manager_core::commons::configuration::configuration::Configuration;
 
 use crate::{commons::exception::api_exception::ApiException, domain::builder_db_service::BuilderDBService};
 
-use super::dto::db_service::dto_db_service::DTODBService;
+use super::dto::db_service::{dto_db_service::DTODBService, dto_db_service_lite::DTODBServiceLite};
 
 pub struct Controller{
 }
@@ -18,9 +18,10 @@ impl Controller {
             .route("/:service/status", get(Controller::status))
     }
 
-    async fn services() -> (StatusCode, Json<Vec<String>>) {
+    async fn services() -> (StatusCode, Json<Vec<DTODBServiceLite>>) {
         let services = Configuration::find_services();
-        (StatusCode::ACCEPTED, Json(services))
+        let dto = DTODBServiceLite::from_vec(services);
+        (StatusCode::ACCEPTED, Json(dto))
     }
 
     async fn insert_service(Json(dto): Json<DTODBService>) -> Result<(StatusCode, String), impl IntoResponse> {

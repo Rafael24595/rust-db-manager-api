@@ -12,6 +12,7 @@ pub mod infrastructure {
         pub mod db_service {
             pub mod dto_db_connection_data;
             pub mod dto_db_service;
+            pub mod dto_db_service_lite;
         }
     }
     pub mod controller;
