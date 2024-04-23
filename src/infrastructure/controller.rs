@@ -1,10 +1,10 @@
-use axum::{body::Body, extract::Path, http::{Response, StatusCode}, response::IntoResponse, routing::{get, post}, Json, Router};
+use axum::{body::Body, extract::{Path, Query}, http::{Response, StatusCode}, response::IntoResponse, routing::{get, post}, Json, Router};
 
 use rust_db_manager_core::commons::configuration::configuration::Configuration;
 
 use crate::{commons::exception::api_exception::ApiException, domain::builder_db_service::BuilderDBService};
 
-use super::dto::db_service::{dto_db_service::DTODBService, dto_db_service_lite::DTODBServiceLite};
+use super::{dto::{db_service::{dto_db_service::DTODBService, dto_db_service_lite::DTODBServiceLite, dto_paginated_collection::DTOPaginatedCollection}, dto_query_pagination::DTOQueryPagination}, pagination::Pagination};
 
 pub struct Controller{
 }
@@ -18,10 +18,11 @@ impl Controller {
             .route("/:service/status", get(Controller::status))
     }
 
-    async fn services() -> (StatusCode, Json<Vec<DTODBServiceLite>>) {
+    async fn services(Query(params): Query<DTOQueryPagination>) -> (StatusCode, Json<DTOPaginatedCollection<DTODBServiceLite>>) {
         let services = Configuration::find_services();
         let dto = DTODBServiceLite::from_vec(services);
-        (StatusCode::ACCEPTED, Json(dto))
+        let result = Pagination::paginate(params, dto);
+        (StatusCode::ACCEPTED, Json(result))
     }
 
     async fn insert_service(Json(dto): Json<DTODBService>) -> Result<(StatusCode, String), impl IntoResponse> {
