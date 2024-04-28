@@ -1,7 +1,8 @@
-use rust_db_manager_core::infrastructure::{db_service_lite::DBServiceLite, repository::e_db_repository::EDBRepository};
+use rust_db_manager_core::infrastructure::repository::e_db_repository::EDBRepository;
 use serde::{Deserialize, Serialize};
 
-use crate::infrastructure::{db_assets::WebEDBRepository, dto::dto_db_resources::DTODBResources};
+use super::dto_db_resources::DTODBResources;
+use crate::infrastructure::db_assets::WebEDBRepository;
 
 #[derive(Clone, Serialize, Deserialize)]
 pub struct DTODBServiceWebCategory {

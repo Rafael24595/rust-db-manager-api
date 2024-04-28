@@ -1,6 +1,6 @@
 use rust_db_manager_core::infrastructure::repository::e_db_repository::EDBRepository;
 
-use super::dto::dto_db_resources::DTODBResources;
+use super::dto::db_service::dto_db_resources::DTODBResources;
 
 pub trait WebEDBRepository {
     

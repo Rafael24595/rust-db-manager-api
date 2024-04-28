@@ -2,9 +2,9 @@ use axum::{body::Body, extract::{Path, Query}, http::{Response, StatusCode}, res
 
 use rust_db_manager_core::commons::configuration::configuration::Configuration;
 
-use crate::{commons::exception::api_exception::ApiException, domain::builder_db_service::BuilderDBService};
+use crate::{commons::{configuration::web_configuration::WebConfiguration, exception::api_exception::ApiException}, domain::builder_db_service::BuilderDBService};
 
-use super::{dto::{db_service::{dto_db_service::DTODBService, dto_db_service_lite::DTODBServiceLite, dto_paginated_collection::DTOPaginatedCollection}, dto_query_pagination::DTOQueryPagination}, pagination::Pagination};
+use super::{dto::{db_service::{dto_db_service::DTODBService, dto_db_service_lite::DTODBServiceLite}, dto_server_status::DTOServerStatus, pagination::{dto_paginated_collection::DTOPaginatedCollection, dto_query_pagination::DTOQueryPagination}}, pagination::Pagination};
 
 pub struct Controller{
 }
@@ -13,9 +13,15 @@ impl Controller {
     
     pub fn route(router: Router) -> Router {
         router
+            .route("/status", get(Controller::status))
             .route("/services", get(Controller::services))
+            .route("/:service/status", get(Controller::service_status))
             .route("/:service", post(Controller::insert_service))
-            .route("/:service/status", get(Controller::status))
+    }
+
+    async fn status() -> (StatusCode, Json<DTOServerStatus>) {
+        let result = WebConfiguration::as_dto();
+        (StatusCode::ACCEPTED, Json(result))
     }
 
     async fn services(Query(params): Query<DTOQueryPagination>) -> (StatusCode, Json<DTOPaginatedCollection<DTODBServiceLite>>) {
@@ -42,7 +48,7 @@ impl Controller {
         Ok((StatusCode::ACCEPTED, service.name()))
     }
 
-    async fn status(Path(service): Path<String>) -> Result<(StatusCode, String), impl IntoResponse> {
+    async fn service_status(Path(service): Path<String>) -> Result<(StatusCode, String), impl IntoResponse> {
         let db_service = Configuration::find_service(service);
         if db_service.is_none() {
             return Err(Controller::not_found());

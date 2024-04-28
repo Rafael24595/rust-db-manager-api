@@ -3,12 +3,11 @@ use std::net::SocketAddr;
 use tower_http::cors::CorsLayer;
 
 use axum::Router;
-use rust_db_manager_api::infrastructure::{controller::Controller, dto::dto_query_pagination::DTOQueryPagination, pagination::Pagination};
-use rust_db_manager_core::commons::configuration::configuration::Configuration;
+use rust_db_manager_api::{commons::configuration::web_configuration::WebConfiguration, infrastructure::controller::Controller};
 
 #[tokio::main]
 async fn main() {
-    let _ = Configuration::initialize();
+    let _ = WebConfiguration::initialize();
 
     let router = Router::new();
     let app = Controller::route(router)

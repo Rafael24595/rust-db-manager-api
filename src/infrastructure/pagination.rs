@@ -1,4 +1,4 @@
-use super::dto::{db_service::dto_paginated_collection::DTOPaginatedCollection, dto_query_pagination::DTOQueryPagination};
+use super::dto::pagination::{dto_paginated_collection::DTOPaginatedCollection, dto_query_pagination::DTOQueryPagination};
 
 pub struct Pagination {}
 
