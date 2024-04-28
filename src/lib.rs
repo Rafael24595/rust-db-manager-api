@@ -17,6 +17,7 @@ pub mod infrastructure {
             pub mod dto_db_resources;
             pub mod dto_db_service_web_category;
             pub mod dto_db_service_lite;
+            pub mod dto_db_service_suscribe;
             pub mod dto_db_service;
         }
         pub mod pagination {
@@ -28,5 +29,6 @@ pub mod infrastructure {
     pub mod controller;
     pub mod db_assets;
     pub mod pagination;
+    pub mod services_jwt;
     pub mod utils;
 }
