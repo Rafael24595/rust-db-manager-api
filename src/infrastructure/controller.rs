@@ -1,10 +1,10 @@
 use axum::{body::Body, extract::{Path, Query}, http::{HeaderMap, Response, StatusCode}, response::IntoResponse, routing::{get, post}, Json, Router};
 
-use rust_db_manager_core::{commons::configuration::configuration::Configuration, infrastructure::db_service::DBService};
+use rust_db_manager_core::{commons::configuration::configuration::Configuration, infrastructure::{db_service::DBService, repository::e_db_repository::EDBRepository}};
 
 use crate::{commons::{configuration::web_configuration::WebConfiguration, exception::api_exception::ApiException}, domain::builder_db_service::BuilderDBService};
 
-use super::{dto::{db_service::{dto_db_service::DTODBService, dto_db_service_lite::DTODBServiceLite, dto_db_service_suscribe::DTODBServiceSuscribe}, dto_server_status::DTOServerStatus, pagination::{dto_paginated_collection::DTOPaginatedCollection, dto_query_pagination::DTOQueryPagination}}, pagination::Pagination, services_jwt::ServicesJWT};
+use super::{db_assets::WebEDBRepository, dto::{db_service::{dto_db_service::DTODBService, dto_db_service_lite::DTODBServiceLite, dto_db_service_suscribe::DTODBServiceSuscribe, dto_db_service_web_category::DTODBServiceWebCategory}, dto_server_status::DTOServerStatus, pagination::{dto_paginated_collection::DTOPaginatedCollection, dto_query_pagination::DTOQueryPagination}}, pagination::Pagination, services_jwt::ServicesJWT};
 
 pub struct Controller{
 }
@@ -14,6 +14,7 @@ impl Controller {
     pub fn route(router: Router) -> Router {
         router
             .route("/status", get(Controller::status))
+            .route("/support", get(Controller::support))
             .route("/services", get(Controller::services))
             .route("/publish", post(Controller::service_publish))
             .route("/suscribe", post(Controller::service_suscribe))
@@ -23,6 +24,11 @@ impl Controller {
     async fn status() -> (StatusCode, Json<DTOServerStatus>) {
         let result = WebConfiguration::as_dto();
         (StatusCode::ACCEPTED, Json(result))
+    }
+
+    async fn support() -> (StatusCode, Json<Vec<DTODBServiceWebCategory>>) {
+        let dto = EDBRepository::supported();
+        (StatusCode::ACCEPTED, Json(dto))
     }
 
     async fn services(Query(params): Query<DTOQueryPagination>) -> (StatusCode, Json<DTOPaginatedCollection<DTODBServiceLite>>) {

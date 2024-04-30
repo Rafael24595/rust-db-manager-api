@@ -1,14 +1,21 @@
 use rust_db_manager_core::infrastructure::repository::e_db_repository::EDBRepository;
 
-use super::dto::db_service::dto_db_resources::DTODBResources;
+use super::dto::db_service::{dto_db_resources::DTODBResources, dto_db_service_web_category::DTODBServiceWebCategory};
 
 pub trait WebEDBRepository {
     
+    fn supported() -> Vec<DTODBServiceWebCategory>;
     fn resources(&self) -> DTODBResources;
 
 }
 
 impl WebEDBRepository for EDBRepository {
+
+    fn supported() -> Vec<DTODBServiceWebCategory> {
+        EDBRepository::items().iter()
+            .map(|e| DTODBServiceWebCategory::from(e.clone()))
+            .collect()
+    }
 
     fn resources(&self) -> DTODBResources {
         match self {
