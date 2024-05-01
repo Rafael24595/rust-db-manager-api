@@ -12,7 +12,7 @@ impl BuilderDBService {
     pub fn make(dto: DTODBService) -> Result<DBService, ApiException> {
         let connection_data = BuilderConnectionData::make(dto.connection_data)?;
         
-        let service = DBService::new(dto.name, dto.owner, dto.password, connection_data);
+        let service = DBService::new(dto.name, dto.owner, dto.protected, dto.password, connection_data);
         if service.is_err() {
             return Err(ApiException::from(500, service.err().unwrap()));
         }

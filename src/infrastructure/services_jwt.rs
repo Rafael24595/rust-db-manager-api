@@ -60,10 +60,12 @@ impl ServicesJWT {
         ServicesJWT::sign_services(services)
     }
 
-    pub fn verify(token: String) -> Result<(), ApiException> {
-        let salt = ServicesJWT::find_services(token.clone())?.iter()
+    pub fn verify(token: String) -> Result<Vec<DBService>, ApiException> {
+        let services = ServicesJWT::find_services(token.clone())?;
+        let salt = services.iter()
             .map(|s| s.salt())
-            .collect::<Vec<String>>().join("#");
+            .collect::<Vec<String>>()
+            .join("#");
 
         let key: Result<Hmac<Sha256>, hmac::digest::InvalidLength> = Hmac::new_from_slice(salt.as_bytes());
         if key.is_err() {
@@ -77,7 +79,7 @@ impl ServicesJWT {
             return Err(exception);
         }
 
-        Ok(())
+        Ok(services)
     }
 
     fn find_services(token: String) -> Result<Vec<DBService>, ApiException> {

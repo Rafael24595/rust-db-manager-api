@@ -28,6 +28,7 @@ pub mod infrastructure {
     }
     pub mod controller;
     pub mod db_assets;
+    pub mod handler;
     pub mod pagination;
     pub mod services_jwt;
     pub mod utils;

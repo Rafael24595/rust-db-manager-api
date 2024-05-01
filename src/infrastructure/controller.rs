@@ -1,10 +1,10 @@
-use axum::{body::Body, extract::{Path, Query}, http::{HeaderMap, Response, StatusCode}, response::IntoResponse, routing::{get, post}, Json, Router};
+use axum::{body::Body, extract::{Path, Query}, http::{HeaderMap, Response, StatusCode}, middleware, response::IntoResponse, routing::{delete, get, post}, Json, Router};
 
 use rust_db_manager_core::{commons::configuration::configuration::Configuration, infrastructure::{db_service::DBService, repository::e_db_repository::EDBRepository}};
 
 use crate::{commons::{configuration::web_configuration::WebConfiguration, exception::api_exception::ApiException}, domain::builder_db_service::BuilderDBService};
 
-use super::{db_assets::WebEDBRepository, dto::{db_service::{dto_db_service::DTODBService, dto_db_service_lite::DTODBServiceLite, dto_db_service_suscribe::DTODBServiceSuscribe, dto_db_service_web_category::DTODBServiceWebCategory}, dto_server_status::DTOServerStatus, pagination::{dto_paginated_collection::DTOPaginatedCollection, dto_query_pagination::DTOQueryPagination}}, pagination::Pagination, services_jwt::ServicesJWT};
+use super::{db_assets::WebEDBRepository, dto::{db_service::{dto_db_service::DTODBService, dto_db_service_lite::DTODBServiceLite, dto_db_service_suscribe::DTODBServiceSuscribe, dto_db_service_web_category::DTODBServiceWebCategory}, dto_server_status::DTOServerStatus, pagination::{dto_paginated_collection::DTOPaginatedCollection, dto_query_pagination::DTOQueryPagination}}, handler, pagination::Pagination, services_jwt::ServicesJWT};
 
 pub struct Controller{
 }
@@ -13,12 +13,14 @@ impl Controller {
     
     pub fn route(router: Router) -> Router {
         router
+            .route("/:service/status", get(Controller::service_status))
+            .route("/:service", delete(Controller::service_remove))
+            .route_layer(middleware::from_fn(handler::autentication_handler))
             .route("/status", get(Controller::status))
             .route("/support", get(Controller::support))
             .route("/services", get(Controller::services))
-            .route("/publish", post(Controller::service_publish))
-            .route("/suscribe", post(Controller::service_suscribe))
-            .route("/:service/status", get(Controller::service_status))
+            .route("/publish", post(Controller::publish))
+            .route("/suscribe", post(Controller::suscribe))
     }
 
     async fn status() -> (StatusCode, Json<DTOServerStatus>) {
@@ -38,7 +40,7 @@ impl Controller {
         (StatusCode::ACCEPTED, Json(result))
     }
 
-    async fn service_publish(headers: HeaderMap, Json(dto): Json<DTODBService>) -> impl IntoResponse {
+    async fn publish(headers: HeaderMap, Json(dto): Json<DTODBService>) -> impl IntoResponse {
         let o_service = BuilderDBService::make(dto);
         if let Err(error) = o_service {
             return Err(error.into_response());
@@ -46,10 +48,12 @@ impl Controller {
         
         let service = o_service.unwrap();
 
-        let token = Controller::make_token(headers, service.clone());
-        if token.is_err() {
-            return Err(token.unwrap_err().into_response());
+        let r_token = Controller::make_token(headers, service.clone());
+        if r_token.is_err() {
+            return Err(r_token.unwrap_err().into_response());
         }
+
+        let token = r_token.unwrap();
 
         let db_service = Configuration::push_service(service.clone());
         if let Err(error) = db_service {
@@ -57,16 +61,21 @@ impl Controller {
             return Err(exception.into_response());
         }
 
-        let response = Response::builder()
-            .header("db-token", token.unwrap())
+        let mut builder = Response::builder();
+        if token.is_some() {
+            let cookie = format!("{}={}; Path=/; Secure; HttpOnly; SameSite=Lax", WebConfiguration::COOKIE_NAME, token.unwrap());
+            builder = builder.header("Set-Cookie", cookie);
+        } 
+
+        let response = builder
             .status(StatusCode::ACCEPTED)
-            .body(Body::from(service.name()))
+            .body(Body::empty())
             .unwrap();
 
         Ok(response)
     }
 
-    async fn service_suscribe(headers: HeaderMap, Json(dto): Json<DTODBServiceSuscribe>) -> impl IntoResponse {
+    async fn suscribe(headers: HeaderMap, Json(dto): Json<DTODBServiceSuscribe>) -> impl IntoResponse {
         let o_service = Configuration::find_service(dto.name);
         if o_service.is_none() {
             let exception = ApiException::new(StatusCode::NOT_FOUND.as_u16(), String::from("Service not found."));
@@ -80,15 +89,22 @@ impl Controller {
             return Err(exception.into_response());
         }
 
-        let token = Controller::make_token(headers, service.clone());
-        if token.is_err() {
-            return Err(token.unwrap_err().into_response());
+        let r_token = Controller::make_token(headers, service.clone());
+        if r_token.is_err() {
+            return Err(r_token.unwrap_err().into_response());
         }
 
-        let response = Response::builder()
-            .header("db-token", token.unwrap())
+        let token = r_token.unwrap();
+
+        let mut builder = Response::builder();
+        if token.is_some() {
+            let cookie = format!("{}={}; Path=/; Secure; HttpOnly; SameSite=Lax", WebConfiguration::COOKIE_NAME, token.unwrap());
+            builder = builder.header("Set-Cookie", cookie);
+        } 
+
+        let response = builder
             .status(StatusCode::ACCEPTED)
-            .body(Body::from(service.name()))
+            .body(Body::empty())
             .unwrap();
 
         Ok(response)
@@ -115,23 +131,43 @@ impl Controller {
         Ok((StatusCode::ACCEPTED, String::from("Service up.")))
     }
 
-    fn make_token(headers: HeaderMap, service: DBService) -> Result<String, ApiException> {
-        match headers.get("db-token") {
+    async fn service_remove(Path(service): Path<String>) -> Result<StatusCode, impl IntoResponse> {
+        let db_service = Configuration::find_service(service);
+        if db_service.is_none() {
+            return Err(Controller::not_found());
+        }
+
+        Configuration::remove_service(db_service.unwrap());
+        
+        Ok(StatusCode::ACCEPTED)
+    }
+
+    fn make_token(headers: HeaderMap, service: DBService) -> Result<Option<String>, ApiException> {
+        match headers.get(WebConfiguration::COOKIE_NAME) {
             Some(header) => {
-                let result = ServicesJWT::update(header.to_str().unwrap().to_owned(), service.clone());
+                let token = header.to_str().unwrap().to_owned();
+                if !service.is_protected() {
+                    return Ok(Some(token));
+                }
+
+                let result = ServicesJWT::update(token, service.clone());
                 if result.is_err() {
                     return Err(result.unwrap_err());
                 }
                 
-                Ok(result.unwrap())
+                Ok(Some(result.unwrap()))
             },
             None => {
+                if !service.is_protected() {
+                    return Ok(None);
+                }
+
                 let result = ServicesJWT::sign(service.clone());
                 if result.is_err() {
                     return Err(result.unwrap_err());
                 }
     
-                Ok(result.unwrap())
+                Ok(Some(result.unwrap()))
             },
         }
     }
