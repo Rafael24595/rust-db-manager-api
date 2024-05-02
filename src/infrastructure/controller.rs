@@ -2,7 +2,7 @@ use axum::{body::Body, extract::{Path, Query}, http::{header::SET_COOKIE, Header
 
 use rust_db_manager_core::{commons::configuration::configuration::Configuration, infrastructure::{db_service::DBService, repository::e_db_repository::EDBRepository}};
 
-use crate::{commons::{configuration::web_configuration::WebConfiguration, exception::api_exception::ApiException}, domain::builder_db_service::BuilderDBService};
+use crate::{commons::{configuration::web_configuration::WebConfiguration, exception::{api_exception::ApiException, auth_exception::AuthException}}, domain::builder_db_service::BuilderDBService};
 
 use super::{db_assets::WebEDBRepository, dto::{db_service::{dto_db_service::DTODBService, dto_db_service_lite::DTODBServiceLite, dto_db_service_suscribe::DTODBServiceSuscribe, dto_db_service_web_category::DTODBServiceWebCategory}, dto_server_status::DTOServerStatus, pagination::{dto_paginated_collection::DTOPaginatedCollection, dto_query_pagination::DTOQueryPagination}}, handler, pagination::Pagination, services_jwt::ServicesJWT, utils::find_token};
 
@@ -162,7 +162,7 @@ impl Controller {
         Ok(response)
     }
 
-    fn make_token(headers: HeaderMap, service: &DBService) -> Result<Option<String>, ApiException> {
+    fn make_token(headers: HeaderMap, service: &DBService) -> Result<Option<String>, AuthException> {
         let o_token = find_token(headers);
         if o_token.is_err() {
             return Err(o_token.unwrap_err());
@@ -197,7 +197,7 @@ impl Controller {
         }
     }
 
-    fn remove_token(headers: HeaderMap, service: &DBService) -> Result<Option<String>, ApiException> {
+    fn remove_token(headers: HeaderMap, service: &DBService) -> Result<Option<String>, AuthException> {
         let o_token = find_token(headers);
         if o_token.is_err() {
             return Err(o_token.unwrap_err());

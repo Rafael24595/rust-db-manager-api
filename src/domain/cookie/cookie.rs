@@ -1,4 +1,4 @@
-use crate::commons::exception::api_exception::ApiException;
+use crate::commons::exception::auth_exception::AuthException;
 
 use super::{builder_cookie::BuilderCookie, same_site::SameSite};
 
@@ -59,7 +59,7 @@ impl Cookie {
         cookie_string
     }
 
-    pub fn from_string(cookie_string: &str) -> Result<Self, ApiException> {
+    pub fn from_string(cookie_string: &str) -> Result<Self, AuthException> {
         BuilderCookie::make(cookie_string)
     }
 

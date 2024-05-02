@@ -1,4 +1,4 @@
-use crate::commons::exception::api_exception::ApiException;
+use crate::commons::exception::auth_exception::AuthException;
 
 use super::{builder_jar::BuilderJar, cookie::Cookie};
 
@@ -15,7 +15,7 @@ impl Jar {
         }
     }
 
-    pub fn from_string(jar_string: &str) -> Result<Self, ApiException> {
+    pub fn from_string(jar_string: &str) -> Result<Self, AuthException> {
         BuilderJar::make(jar_string.to_string())
     }
 

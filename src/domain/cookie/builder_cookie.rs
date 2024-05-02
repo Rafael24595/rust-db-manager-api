@@ -1,4 +1,4 @@
-use crate::commons::exception::api_exception::ApiException;
+use crate::commons::exception::auth_exception::AuthException;
 
 use super::{cookie::Cookie, same_site::SameSite};
 
@@ -7,7 +7,7 @@ pub(crate) struct BuilderCookie {
 
 impl BuilderCookie {
     
-    pub(crate) fn make(cookie_string: &str) -> Result<Cookie, ApiException> {
+    pub(crate) fn make(cookie_string: &str) -> Result<Cookie, AuthException> {
         let mut parts: Vec<&str> = cookie_string.split(';').collect();
 
         let code_value = parts.remove(0).trim()
@@ -16,7 +16,7 @@ impl BuilderCookie {
             .collect::<Vec<String>>();
         if code_value.len() != 2 {
             let message = String::from("Invalid cookie format");
-            return Err(ApiException::new(301, message));
+            return Err(AuthException::new_reset(301, message));
         }
 
         let code = code_value.get(0).cloned().unwrap();
@@ -43,7 +43,7 @@ impl BuilderCookie {
                     let string_max_age = value.unwrap_or_default();
                     let max_age: Result<u32, _>  = string_max_age.parse();
                     if max_age.is_err() {
-                        let exception = ApiException::new(301, max_age.unwrap_err().to_string());
+                        let exception = AuthException::new_reset(301, max_age.unwrap_err().to_string());
                         return Err(exception);
                     }
                     Some(max_age.unwrap())
@@ -53,13 +53,13 @@ impl BuilderCookie {
                     let samesite = SameSite::from_string(&string_samesite.clone());
                     if samesite.is_none() {
                         let message = String::from(format!("Unknown Same Site value: '{}'", string_samesite));
-                        return Err(ApiException::new(301, message));
+                        return Err(AuthException::new_reset(301, message));
                     }
                     Some(samesite.unwrap())
                 },
                 _ => {
                     let message = String::from(format!("Unknown field code: '{}'", key));
-                    return Err(ApiException::new(301, message));
+                    return Err(AuthException::new_reset(301, message));
                 }
             }
         }

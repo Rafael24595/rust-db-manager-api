@@ -7,6 +7,7 @@ use super::api_exception::ApiException;
 pub struct AuthException {
     status: u16,
     message: String,
+    reset: bool,
 }
 
 impl fmt::Display for AuthException {
@@ -20,17 +21,27 @@ impl Error for AuthException {}
 
 impl AuthException {
     
-    pub fn from(status: u16, exception: ApiException) -> AuthException {
+    pub fn from(status: u16, exception: ApiException, reset: bool) -> AuthException {
         AuthException {
             status: status,
-            message: exception.message()
+            message: exception.message(),
+            reset: reset
         }
     }
 
     pub fn new(status: u16, message: String) -> AuthException {
         AuthException {
             status,
-            message
+            message,
+            reset: false
+        }
+    }
+
+    pub fn new_reset(status: u16, message: String) -> AuthException {
+        AuthException {
+            status,
+            message,
+            reset: true
         }
     }
     
@@ -40,6 +51,10 @@ impl AuthException {
 
     pub fn message(&self) -> String {
         return self.message.clone();
+    }
+
+    pub fn reset(&self) -> bool {
+        return self.reset;
     }
 
 }

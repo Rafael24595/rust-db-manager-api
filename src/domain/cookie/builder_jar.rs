@@ -1,6 +1,6 @@
 use regex::Regex;
 
-use crate::commons::exception::api_exception::ApiException;
+use crate::commons::exception::auth_exception::AuthException;
 
 use super::{cookie::Cookie, jar::Jar};
 
@@ -13,7 +13,7 @@ pub(crate) struct BuilderJar {
 
 impl BuilderJar {
     
-    pub(crate) fn make(jar_string: String) -> Result<Jar, ApiException> {
+    pub(crate) fn make(jar_string: String) -> Result<Jar, AuthException> {
         let mut instance = Self {
             last: 0,
             buffer: Vec::new(),
@@ -23,7 +23,7 @@ impl BuilderJar {
         instance._make()
     }
 
-    fn _make(&mut self) -> Result<Jar, ApiException> {
+    fn _make(&mut self) -> Result<Jar, AuthException> {
         let pattern = Regex::new(r";\s?[\w|.|-]+=").unwrap();
 
         for capture in pattern.captures_iter(&self.jar_string.clone()) {
@@ -42,7 +42,7 @@ impl BuilderJar {
         Ok(self.jar.clone())
     }
 
-    fn manage_cookie(&mut self, index: usize) -> Result<(), ApiException> {
+    fn manage_cookie(&mut self, index: usize) -> Result<(), AuthException> {
         let jar_string = self.jar_string.clone();
         let fragment = jar_string[self.last..index].trim();
         println!("{}", self.buffer.join("; "));
@@ -55,7 +55,7 @@ impl BuilderJar {
         Ok(())
     }
 
-    fn flush_buffer(&mut self) -> Result<(), ApiException> {
+    fn flush_buffer(&mut self) -> Result<(), AuthException> {
         self.jar.cookies.push(Cookie::from_string(&self.buffer.join("; "))?);
         self.buffer.clear();
         Ok(())

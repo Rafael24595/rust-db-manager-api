@@ -7,13 +7,7 @@ use super::services_jwt::ServicesJWT;
 impl IntoResponse for ApiException {
 
     fn into_response(self) -> Response<Body> {
-        let mut builder = Response::builder();
-        if let Ok(token) = ServicesJWT::sign_empty() {
-            let cookie = format!("{}={}; Path=/; HttpOnly", WebConfiguration::COOKIE_NAME, token);
-            builder = builder.header(SET_COOKIE, cookie);
-        }
-        
-        builder
+        Response::builder()
         .status(self.status())
         .body(Body::from(self.message()))
         .unwrap()
@@ -24,7 +18,15 @@ impl IntoResponse for ApiException {
 impl IntoResponse for AuthException {
 
     fn into_response(self) -> Response<Body> {
-        Response::builder()
+        let mut builder = Response::builder();
+        if let Ok(token) = ServicesJWT::sign_empty() {
+            if self.reset() {
+                let cookie = format!("{}={}; Path=/; HttpOnly", WebConfiguration::COOKIE_NAME, token);
+                builder = builder.header(SET_COOKIE, cookie);
+            }
+        }
+        
+        builder
         .status(self.status())
         .body(Body::from(self.message()))
         .unwrap()
@@ -32,7 +34,7 @@ impl IntoResponse for AuthException {
 
 }
 
-pub(crate) fn find_token(headers: HeaderMap) -> Result<Option<String>, ApiException> {
+pub(crate) fn find_token(headers: HeaderMap) -> Result<Option<String>, AuthException> {
     let o_cookies = headers.get(COOKIE);
     if o_cookies.is_none() {
         return Ok(None);
@@ -40,7 +42,7 @@ pub(crate) fn find_token(headers: HeaderMap) -> Result<Option<String>, ApiExcept
 
     let cookies = o_cookies.unwrap().to_str();
     if cookies.is_err() {
-        let exception = ApiException::new(StatusCode::UNAUTHORIZED.as_u16(), String::from("Token has non valid format"));
+        let exception = AuthException::new_reset(StatusCode::UNAUTHORIZED.as_u16(), String::from("Token has non valid format"));
         return Err(exception);
     }
 
