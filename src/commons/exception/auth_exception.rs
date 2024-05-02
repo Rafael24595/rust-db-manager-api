@@ -1,34 +1,34 @@
 use std::fmt;
 use std::error::Error;
 
-use rust_db_manager_core::commons::exception::connect_exception::ConnectException;
+use super::api_exception::ApiException;
 
 #[derive(Debug, Clone)]
-pub struct ApiException {
+pub struct AuthException {
     status: u16,
     message: String,
 }
 
-impl fmt::Display for ApiException {
+impl fmt::Display for AuthException {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "ApiException: {}", self.message)
+        write!(f, "AuthException: {}", self.message)
     }
 }
 
-impl Error for ApiException {}
+impl Error for AuthException {}
 
 
-impl ApiException {
+impl AuthException {
     
-    pub fn from(status: u16, exception: ConnectException) -> ApiException {
-        ApiException {
+    pub fn from(status: u16, exception: ApiException) -> AuthException {
+        AuthException {
             status: status,
             message: exception.message()
         }
     }
 
-    pub fn new(status: u16, message: String) -> ApiException {
-        ApiException {
+    pub fn new(status: u16, message: String) -> AuthException {
+        AuthException {
             status,
             message
         }

@@ -4,6 +4,7 @@ pub mod commons {
     }
     pub mod exception {
         pub mod api_exception;
+        pub mod auth_exception;
     }
 }
 pub mod domain {

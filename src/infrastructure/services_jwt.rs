@@ -17,6 +17,10 @@ impl ServicesJWT {
         ServicesJWT::sign_services(Vec::from(vec![service.clone()]))
     }
 
+    pub fn sign_empty() -> Result<String, ApiException> {
+        ServicesJWT::sign_services(Vec::new())
+    }
+
     pub fn sign_services(services: Vec<DBService>) -> Result<String, ApiException> {
         let s_key = services.iter()
             .map(|s| s.salt())
