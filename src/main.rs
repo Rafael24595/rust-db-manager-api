@@ -8,10 +8,10 @@ use rust_db_manager_api::{commons::configuration::web_configuration::WebConfigur
 #[tokio::main]
 async fn main() {
     let _ = WebConfiguration::initialize();
-
+    
     let router = Router::new();
     let app = Controller::route(router)
-        .layer(CorsLayer::permissive())
+        .layer(CorsLayer::very_permissive())
         .into_make_service_with_connect_info::<SocketAddr>();
 
     let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await.unwrap();

@@ -1,10 +1,10 @@
-use axum::{body::Body, extract::{Path, Query}, http::{HeaderMap, Response, StatusCode}, middleware, response::IntoResponse, routing::{delete, get, post}, Json, Router};
+use axum::{body::Body, extract::{Path, Query}, http::{header::SET_COOKIE, HeaderMap, Response, StatusCode}, middleware, response::IntoResponse, routing::{delete, get, post}, Json, Router};
 
 use rust_db_manager_core::{commons::configuration::configuration::Configuration, infrastructure::{db_service::DBService, repository::e_db_repository::EDBRepository}};
 
 use crate::{commons::{configuration::web_configuration::WebConfiguration, exception::api_exception::ApiException}, domain::builder_db_service::BuilderDBService};
 
-use super::{db_assets::WebEDBRepository, dto::{db_service::{dto_db_service::DTODBService, dto_db_service_lite::DTODBServiceLite, dto_db_service_suscribe::DTODBServiceSuscribe, dto_db_service_web_category::DTODBServiceWebCategory}, dto_server_status::DTOServerStatus, pagination::{dto_paginated_collection::DTOPaginatedCollection, dto_query_pagination::DTOQueryPagination}}, handler, pagination::Pagination, services_jwt::ServicesJWT};
+use super::{db_assets::WebEDBRepository, dto::{db_service::{dto_db_service::DTODBService, dto_db_service_lite::DTODBServiceLite, dto_db_service_suscribe::DTODBServiceSuscribe, dto_db_service_web_category::DTODBServiceWebCategory}, dto_server_status::DTOServerStatus, pagination::{dto_paginated_collection::DTOPaginatedCollection, dto_query_pagination::DTOQueryPagination}}, handler, pagination::Pagination, services_jwt::ServicesJWT, utils::find_token};
 
 pub struct Controller{
 }
@@ -46,16 +46,16 @@ impl Controller {
             return Err(error.into_response());
         }
         
-        let service = o_service.unwrap();
+        let service = &o_service.unwrap();
 
-        let r_token = Controller::make_token(headers, service.clone());
+        let r_token = Controller::make_token(headers, service);
         if r_token.is_err() {
             return Err(r_token.unwrap_err().into_response());
         }
 
         let token = r_token.unwrap();
 
-        let db_service = Configuration::push_service(service.clone());
+        let db_service = Configuration::push_service(service);
         if let Err(error) = db_service {
             let exception = ApiException::from(StatusCode::INTERNAL_SERVER_ERROR.as_u16(), error);
             return Err(exception.into_response());
@@ -63,12 +63,12 @@ impl Controller {
 
         let mut builder = Response::builder();
         if token.is_some() {
-            let cookie = format!("{}={}; Path=/; Secure; HttpOnly; SameSite=Lax", WebConfiguration::COOKIE_NAME, token.unwrap());
-            builder = builder.header("Set-Cookie", cookie);
+            let cookie = format!("{}={}; Path=/;", WebConfiguration::COOKIE_NAME, token.unwrap());
+            builder = builder.header(SET_COOKIE, cookie);
         } 
 
         let response = builder
-            .status(StatusCode::ACCEPTED)
+            .status(StatusCode::OK)
             .body(Body::empty())
             .unwrap();
 
@@ -82,14 +82,14 @@ impl Controller {
             return Err(exception.into_response());
         }
         
-        let service = o_service.unwrap();
+        let service = &o_service.unwrap();
 
         if service.is_authorized(dto.password).is_err() {
             let exception = ApiException::new(StatusCode::UNAUTHORIZED.as_u16(), String::from("Authentication error."));
             return Err(exception.into_response());
         }
 
-        let r_token = Controller::make_token(headers, service.clone());
+        let r_token = Controller::make_token(headers, service);
         if r_token.is_err() {
             return Err(r_token.unwrap_err().into_response());
         }
@@ -98,12 +98,12 @@ impl Controller {
 
         let mut builder = Response::builder();
         if token.is_some() {
-            let cookie = format!("{}={}; Path=/; Secure; HttpOnly; SameSite=Lax", WebConfiguration::COOKIE_NAME, token.unwrap());
-            builder = builder.header("Set-Cookie", cookie);
+            let cookie = format!("{}={}; Path=/; HttpOnly", WebConfiguration::COOKIE_NAME, token.unwrap());
+            builder = builder.header(SET_COOKIE, cookie);
         } 
 
         let response = builder
-            .status(StatusCode::ACCEPTED)
+            .status(StatusCode::OK)
             .body(Body::empty())
             .unwrap();
 
@@ -131,26 +131,51 @@ impl Controller {
         Ok((StatusCode::ACCEPTED, String::from("Service up.")))
     }
 
-    async fn service_remove(Path(service): Path<String>) -> Result<StatusCode, impl IntoResponse> {
-        let db_service = Configuration::find_service(service);
-        if db_service.is_none() {
+    async fn service_remove(headers: HeaderMap, Path(service): Path<String>) -> impl IntoResponse {
+        let o_db_service = Configuration::find_service(service);
+        if o_db_service.is_none() {
             return Err(Controller::not_found());
         }
 
-        Configuration::remove_service(db_service.unwrap());
-        
-        Ok(StatusCode::ACCEPTED)
+        let db_service = o_db_service.unwrap();
+
+        let r_token = Controller::remove_token(headers, &db_service);
+        if r_token.is_err() {
+            return Err(r_token.unwrap_err().into_response());
+        }
+
+        let token = r_token.unwrap();
+
+        Configuration::remove_service(db_service);
+
+        let mut builder = Response::builder();
+        if token.is_some() {
+            let cookie = format!("{}={}; Path=/; HttpOnly", WebConfiguration::COOKIE_NAME, token.unwrap());
+            builder = builder.header(SET_COOKIE, cookie);
+        }
+
+        let response = builder
+            .status(StatusCode::OK)
+            .body(Body::empty())
+            .unwrap();
+
+        Ok(response)
     }
 
-    fn make_token(headers: HeaderMap, service: DBService) -> Result<Option<String>, ApiException> {
-        match headers.get(WebConfiguration::COOKIE_NAME) {
-            Some(header) => {
-                let token = header.to_str().unwrap().to_owned();
+    fn make_token(headers: HeaderMap, service: &DBService) -> Result<Option<String>, ApiException> {
+        let o_token = find_token(headers);
+        if o_token.is_err() {
+            return Err(o_token.unwrap_err());
+        }
+
+        match o_token.unwrap() {
+            Some(token) => {
                 if !service.is_protected() {
-                    return Ok(Some(token));
+                    let result = Some(token);
+                    return Ok(result);
                 }
 
-                let result = ServicesJWT::update(token, service.clone());
+                let result = ServicesJWT::update(&token, service);
                 if result.is_err() {
                     return Err(result.unwrap_err());
                 }
@@ -162,13 +187,37 @@ impl Controller {
                     return Ok(None);
                 }
 
-                let result = ServicesJWT::sign(service.clone());
+                let result = ServicesJWT::sign(service);
                 if result.is_err() {
                     return Err(result.unwrap_err());
                 }
     
                 Ok(Some(result.unwrap()))
             },
+        }
+    }
+
+    fn remove_token(headers: HeaderMap, service: &DBService) -> Result<Option<String>, ApiException> {
+        let o_token = find_token(headers);
+        if o_token.is_err() {
+            return Err(o_token.unwrap_err());
+        }
+
+        match o_token.unwrap() {
+            Some(token) => {
+                if !service.is_protected() {
+                    let result = Some(token);
+                    return Ok(result);
+                }
+
+                let result = ServicesJWT::remove(&token, service);
+                if result.is_err() {
+                    return Err(result.unwrap_err());
+                }
+                
+                Ok(Some(result.unwrap()))
+            },
+            None => return Ok(None),
         }
     }
     

@@ -13,7 +13,7 @@ impl WebEDBRepository for EDBRepository {
 
     fn supported() -> Vec<DTODBServiceWebCategory> {
         EDBRepository::items().iter()
-            .map(|e| DTODBServiceWebCategory::from(e.clone()))
+            .map(|e| DTODBServiceWebCategory::from(e))
             .collect()
     }
 

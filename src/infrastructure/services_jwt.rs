@@ -13,8 +13,8 @@ pub struct ServicesJWT {
 
 impl ServicesJWT {
     
-    pub fn sign(service: DBService) -> Result<String, ApiException> {
-        ServicesJWT::sign_services(Vec::from(vec![service]))
+    pub fn sign(service: &DBService) -> Result<String, ApiException> {
+        ServicesJWT::sign_services(Vec::from(vec![service.clone()]))
     }
 
     pub fn sign_services(services: Vec<DBService>) -> Result<String, ApiException> {
@@ -46,22 +46,33 @@ impl ServicesJWT {
         Ok(token_str.unwrap())
     }
 
-    pub fn update(token: String, service: DBService) -> Result<String, ApiException> {
-        let _ = ServicesJWT::verify(token.clone())?;
+    pub fn update(token: &str, service: &DBService) -> Result<String, ApiException> {
+        let _ = ServicesJWT::verify(token)?;
         
-        let mut services = ServicesJWT::find_services(token.clone())?;
+        let mut services = ServicesJWT::find_services(token)?;
         if services.iter().find(|s| s.name() == service.name()).is_some() {
             let exception = ApiException::new(500, String::from("This token is already subscribed to the service."));
             return Err(exception);
         }
         
-        services.push(service);
+        services.push(service.clone());
 
         ServicesJWT::sign_services(services)
     }
 
-    pub fn verify(token: String) -> Result<Vec<DBService>, ApiException> {
-        let services = ServicesJWT::find_services(token.clone())?;
+    pub fn remove(token: &str, service: &DBService) -> Result<String, ApiException> {
+        let _ = ServicesJWT::verify(token)?;
+        
+        let mut services = ServicesJWT::find_services(token)?;
+        if let Some(position) = services.iter().position(|s| s.name() == service.name()) {
+            services.remove(position);
+        }
+
+        ServicesJWT::sign_services(services)
+    }
+
+    pub fn verify(token: &str) -> Result<Vec<DBService>, ApiException> {
+        let services = ServicesJWT::find_services(token)?;
         let salt = services.iter()
             .map(|s| s.salt())
             .collect::<Vec<String>>()
@@ -82,7 +93,7 @@ impl ServicesJWT {
         Ok(services)
     }
 
-    fn find_services(token: String) -> Result<Vec<DBService>, ApiException> {
+    fn find_services(token: &str) -> Result<Vec<DBService>, ApiException> {
         let fragments = token.split(".").collect::<Vec<&str>>();
         if fragments.len() != 3 {
             let exception = ApiException::new(401, String::from("Invalid token."));
@@ -118,7 +129,7 @@ impl ServicesJWT {
 
         let mut collection = Vec::new();
 
-        for s_service in v_services.unwrap().split("-").collect::<Vec<&str>>() {
+        for s_service in v_services.unwrap().split("-").filter(|s| !s.is_empty()).collect::<Vec<&str>>() {
             let service =  Configuration::find_service(String::from(s_service));
             if service.is_none() {
                 let exception = ApiException::new(500, String::from("Unknown service."));

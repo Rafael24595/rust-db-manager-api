@@ -8,7 +8,7 @@ pub struct BuilderConnectionData {
 impl BuilderConnectionData {
     
     pub fn make(dto: DTOConnectionData) -> Result<ConnectionData, ApiException> {
-        let category = EDBRepository::from_string(dto.category.clone());
+        let category = EDBRepository::from_string(&dto.category);
         if let None = category {
             let message = format!("Data base type '{}' not supported.", dto.category);
             return Err(ApiException::new(404, message));

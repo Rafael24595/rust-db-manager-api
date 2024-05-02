@@ -9,6 +9,13 @@ pub mod commons {
 pub mod domain {
     pub mod builder_db_connection_data;
     pub mod builder_db_service;
+    pub mod cookie {
+        pub mod builder_cookie;
+        pub mod builder_jar;
+        pub mod cookie;
+        pub mod jar;
+        pub mod same_site;
+    }
 }
 pub mod infrastructure {
     pub mod dto {

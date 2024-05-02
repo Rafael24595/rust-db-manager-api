@@ -12,7 +12,7 @@ pub struct DTODBServiceWebCategory {
 
 impl DTODBServiceWebCategory {
     
-    pub fn from(category: EDBRepository) -> DTODBServiceWebCategory {
+    pub fn from(category: &EDBRepository) -> DTODBServiceWebCategory {
         DTODBServiceWebCategory {
             category: category.to_string(),
             resources: category.resources()

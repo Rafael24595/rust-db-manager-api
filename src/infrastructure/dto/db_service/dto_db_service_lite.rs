@@ -12,7 +12,9 @@ pub struct DTODBServiceLite {
 impl DTODBServiceLite {
     
     pub fn from_vec(collection: Vec<DBServiceLite>) -> Vec<DTODBServiceLite> {
-        collection.iter().map(|s| DTODBServiceLite{name: s.name(), category: DTODBServiceWebCategory::from(s.category())}).collect()
+        collection.iter()
+            .map(|s| DTODBServiceLite{name: s.name(), category: DTODBServiceWebCategory::from(&s.category())})
+            .collect()
     }
 
 }
