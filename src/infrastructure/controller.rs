@@ -13,14 +13,14 @@ impl Controller {
     
     pub fn route(router: Router) -> Router {
         router
-            .route("/:service/status", get(Controller::service_status))
-            .route("/:service", delete(Controller::service_remove))
+            .route("/:service/status", get(Self::service_status))
+            .route("/:service", delete(Self::service_remove))
             .route_layer(middleware::from_fn(handler::autentication_handler))
-            .route("/status", get(Controller::status))
-            .route("/support", get(Controller::support))
-            .route("/services", get(Controller::services))
-            .route("/publish", post(Controller::publish))
-            .route("/suscribe", post(Controller::suscribe))
+            .route("/status", get(Self::status))
+            .route("/support", get(Self::support))
+            .route("/services", get(Self::services))
+            .route("/publish", post(Self::publish))
+            .route("/suscribe", post(Self::suscribe))
     }
 
     async fn status() -> (StatusCode, Json<DTOServerStatus>) {
@@ -48,7 +48,7 @@ impl Controller {
         
         let service = &o_service.unwrap();
 
-        let r_cookie = Controller::make_token(headers, service);
+        let r_cookie = Self::make_token(headers, service);
         if let Err(exception) = r_cookie {
             return Err(exception.into_response());
         }
@@ -76,7 +76,7 @@ impl Controller {
             return Err(exception.into_response());
         }
 
-        let r_cookie = Controller::make_token(headers, db_service);
+        let r_cookie = Self::make_token(headers, db_service);
         if let Err(exception) = r_cookie {
             return Err(exception.into_response());
         }
@@ -87,7 +87,7 @@ impl Controller {
     async fn service_status(Path(service): Path<String>) -> Result<(StatusCode, String), impl IntoResponse> {
         let o_db_service = Configuration::find_service(service);
         if o_db_service.is_none() {
-            return Err(Controller::not_found());
+            return Err(Self::not_found());
         }
         
         let result = o_db_service.unwrap().instance().await;
@@ -108,12 +108,12 @@ impl Controller {
     async fn service_remove(headers: HeaderMap, Path(service): Path<String>) -> impl IntoResponse {
         let o_db_service = Configuration::find_service(service);
         if o_db_service.is_none() {
-            return Err(Controller::not_found());
+            return Err(Self::not_found());
         }
 
         let db_service = o_db_service.unwrap();
 
-        let r_cookie = Controller::remove_token(headers, &db_service);
+        let r_cookie = Self::remove_token(headers, &db_service);
         if let Err(exception) = r_cookie {
             return Err(exception.into_response());
         }
