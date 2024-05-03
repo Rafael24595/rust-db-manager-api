@@ -5,7 +5,7 @@ use std::collections::BTreeMap;
 
 use rust_db_manager_core::{commons::configuration::configuration::Configuration, infrastructure::db_service::DBService};
 
-use crate::commons::exception::auth_exception::AuthException;
+use crate::{commons::{configuration::web_configuration::WebConfiguration, exception::auth_exception::AuthException}, domain::cookie::cookie::Cookie};
 
 pub struct ServicesJWT {
 
@@ -13,15 +13,15 @@ pub struct ServicesJWT {
 
 impl ServicesJWT {
     
-    pub fn sign(service: &DBService) -> Result<String, AuthException> {
-        ServicesJWT::sign_services(Vec::from(vec![service.clone()]))
+    pub fn sign(service: &DBService) -> Result<Cookie, AuthException> {
+        Self::sign_services(Vec::from(vec![service.clone()]))
     }
 
-    pub fn sign_empty() -> Result<String, AuthException> {
-        ServicesJWT::sign_services(Vec::new())
+    pub fn sign_empty() -> Result<Cookie, AuthException> {
+        Self::sign_services(Vec::new())
     }
 
-    pub fn sign_services(services: Vec<DBService>) -> Result<String, AuthException> {
+    pub fn sign_services(services: Vec<DBService>) -> Result<Cookie, AuthException> {
         let s_key = services.iter()
             .map(|s| s.salt())
             .collect::<Vec<String>>()
@@ -47,13 +47,13 @@ impl ServicesJWT {
             return Err(exception);
         }
         
-        Ok(token_str.unwrap())
+        Ok(Self::default_cookie(token_str.unwrap()))
     }
 
-    pub fn update(token: &str, service: &DBService) -> Result<String, AuthException> {
-        let _ = ServicesJWT::verify(token)?;
+    pub fn update(token: &str, service: &DBService) -> Result<Cookie, AuthException> {
+        let _ = Self::verify(token)?;
         
-        let mut services = ServicesJWT::find_services(token)?;
+        let mut services = Self::find_services(token)?;
         if services.iter().find(|s| s.name() == service.name()).is_some() {
             let exception = AuthException::new(500, String::from("This token is already subscribed to the service."));
             return Err(exception);
@@ -61,22 +61,22 @@ impl ServicesJWT {
         
         services.push(service.clone());
 
-        ServicesJWT::sign_services(services)
+        Ok(Self::sign_services(services)?)
     }
 
-    pub fn remove(token: &str, service: &DBService) -> Result<String, AuthException> {
-        let _ = ServicesJWT::verify(token)?;
+    pub fn remove(token: &str, service: &DBService) -> Result<Cookie, AuthException> {
+        let _ = Self::verify(token)?;
         
-        let mut services = ServicesJWT::find_services(token)?;
+        let mut services = Self::find_services(token)?;
         if let Some(position) = services.iter().position(|s| s.name() == service.name()) {
             services.remove(position);
         }
 
-        ServicesJWT::sign_services(services)
+        Ok(Self::sign_services(services)?)
     }
 
     pub fn verify(token: &str) -> Result<Vec<DBService>, AuthException> {
-        let services = ServicesJWT::find_services(token)?;
+        let services = Self::find_services(token)?;
         let salt = services.iter()
             .map(|s| s.salt())
             .collect::<Vec<String>>()
@@ -143,6 +143,14 @@ impl ServicesJWT {
         }
 
         Ok(collection)
+    }
+
+    fn default_cookie(token: String) -> Cookie {
+        let mut cookie = Cookie::new(String::from(WebConfiguration::COOKIE_NAME), token);
+        cookie.path = Some(String::from("/"));
+        cookie.http_only = Some(true);
+
+        cookie
     }
 
 }

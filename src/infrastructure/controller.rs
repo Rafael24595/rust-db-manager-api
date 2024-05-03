@@ -2,7 +2,7 @@ use axum::{body::Body, extract::{Path, Query}, http::{header::SET_COOKIE, Header
 
 use rust_db_manager_core::{commons::configuration::configuration::Configuration, infrastructure::{db_service::DBService, repository::e_db_repository::EDBRepository}};
 
-use crate::{commons::{configuration::web_configuration::WebConfiguration, exception::{api_exception::ApiException, auth_exception::AuthException}}, domain::builder_db_service::BuilderDBService};
+use crate::{commons::{configuration::web_configuration::WebConfiguration, exception::{api_exception::ApiException, auth_exception::AuthException}}, domain::{builder_db_service::BuilderDBService, cookie::cookie::Cookie}};
 
 use super::{db_assets::WebEDBRepository, dto::{db_service::{dto_db_service::DTODBService, dto_db_service_lite::DTODBServiceLite, dto_db_service_suscribe::DTODBServiceSuscribe, dto_db_service_web_category::DTODBServiceWebCategory}, dto_server_status::DTOServerStatus, pagination::{dto_paginated_collection::DTOPaginatedCollection, dto_query_pagination::DTOQueryPagination}}, handler, pagination::Pagination, services_jwt::ServicesJWT, utils::find_token};
 
@@ -48,75 +48,49 @@ impl Controller {
         
         let service = &o_service.unwrap();
 
-        let r_token = Controller::make_token(headers, service);
-        if r_token.is_err() {
-            return Err(r_token.unwrap_err().into_response());
-        }
-
-        let token = r_token.unwrap();
-
-        let db_service = Configuration::push_service(service);
-        if let Err(error) = db_service {
-            let exception = ApiException::from(StatusCode::INTERNAL_SERVER_ERROR.as_u16(), error);
+        let r_cookie = Controller::make_token(headers, service);
+        if let Err(exception) = r_cookie {
             return Err(exception.into_response());
         }
 
-        let mut builder = Response::builder();
-        if token.is_some() {
-            let cookie = format!("{}={}; Path=/;", WebConfiguration::COOKIE_NAME, token.unwrap());
-            builder = builder.header(SET_COOKIE, cookie);
-        } 
+        let db_service = Configuration::push_service(service);
+        if let Err(exception) = db_service {
+            let exception = ApiException::from(StatusCode::INTERNAL_SERVER_ERROR.as_u16(), exception);
+            return Err(exception.into_response());
+        }
 
-        let response = builder
-            .status(StatusCode::OK)
-            .body(Body::empty())
-            .unwrap();
-
-        Ok(response)
+        Ok(Self::build_token_response(r_cookie.unwrap(), Body::empty()))
     }
 
     async fn suscribe(headers: HeaderMap, Json(dto): Json<DTODBServiceSuscribe>) -> impl IntoResponse {
-        let o_service = Configuration::find_service(dto.name);
-        if o_service.is_none() {
+        let o_db_service = Configuration::find_service(dto.name);
+        if o_db_service.is_none() {
             let exception = ApiException::new(StatusCode::NOT_FOUND.as_u16(), String::from("Service not found."));
             return Err(exception.into_response());
         }
         
-        let service = &o_service.unwrap();
+        let db_service = &o_db_service.unwrap();
 
-        if service.is_authorized(dto.password).is_err() {
+        if db_service.is_authorized(dto.password).is_err() {
             let exception = ApiException::new(StatusCode::UNAUTHORIZED.as_u16(), String::from("Authentication error."));
             return Err(exception.into_response());
         }
 
-        let r_token = Controller::make_token(headers, service);
-        if r_token.is_err() {
-            return Err(r_token.unwrap_err().into_response());
+        let r_cookie = Controller::make_token(headers, db_service);
+        if let Err(exception) = r_cookie {
+            return Err(exception.into_response());
         }
 
-        let token = r_token.unwrap();
-
-        let mut builder = Response::builder();
-        if token.is_some() {
-            let cookie = format!("{}={}; Path=/; HttpOnly", WebConfiguration::COOKIE_NAME, token.unwrap());
-            builder = builder.header(SET_COOKIE, cookie);
-        } 
-
-        let response = builder
-            .status(StatusCode::OK)
-            .body(Body::empty())
-            .unwrap();
-
-        Ok(response)
+        Ok(Self::build_token_response(r_cookie.unwrap(), Body::empty()))
     }
 
     async fn service_status(Path(service): Path<String>) -> Result<(StatusCode, String), impl IntoResponse> {
-        let db_service = Configuration::find_service(service);
-        if db_service.is_none() {
+        let o_db_service = Configuration::find_service(service);
+        if o_db_service.is_none() {
             return Err(Controller::not_found());
         }
         
-        let result = db_service.unwrap().instance().await;
+        let result = o_db_service.unwrap().instance().await;
         if let Err(error) = result {
             let exception = ApiException::from(StatusCode::INTERNAL_SERVER_ERROR.as_u16(), error);
             return Err(exception.into_response());
@@ -139,88 +113,67 @@ impl Controller {
 
         let db_service = o_db_service.unwrap();
 
-        let r_token = Controller::remove_token(headers, &db_service);
-        if r_token.is_err() {
-            return Err(r_token.unwrap_err().into_response());
+        let r_cookie = Controller::remove_token(headers, &db_service);
+        if let Err(exception) = r_cookie {
+            return Err(exception.into_response());
         }
-
-        let token = r_token.unwrap();
 
         Configuration::remove_service(db_service);
 
-        let mut builder = Response::builder();
-        if token.is_some() {
-            let cookie = format!("{}={}; Path=/; HttpOnly", WebConfiguration::COOKIE_NAME, token.unwrap());
-            builder = builder.header(SET_COOKIE, cookie);
-        }
-
-        let response = builder
-            .status(StatusCode::OK)
-            .body(Body::empty())
-            .unwrap();
-
-        Ok(response)
+        Ok(Self::build_token_response(r_cookie.unwrap(), Body::empty()))
     }
 
-    fn make_token(headers: HeaderMap, service: &DBService) -> Result<Option<String>, AuthException> {
-        let o_token = find_token(headers);
-        if o_token.is_err() {
-            return Err(o_token.unwrap_err());
+    fn make_token(headers: HeaderMap, service: &DBService) -> Result<Option<Cookie>, AuthException> {
+        let o_cookie = find_token(headers);
+        if o_cookie.is_err() {
+            return Err(o_cookie.unwrap_err());
         }
 
-        match o_token.unwrap() {
-            Some(token) => {
+        match o_cookie.unwrap() {
+            Some(cookie) => {
                 if !service.is_protected() {
-                    let result = Some(token);
-                    return Ok(result);
-                }
-
-                let result = ServicesJWT::update(&token, service);
-                if result.is_err() {
-                    return Err(result.unwrap_err());
+                    return Ok(Some(cookie));
                 }
                 
-                Ok(Some(result.unwrap()))
+                Ok(Some(ServicesJWT::update(&cookie.value, service)?))
             },
             None => {
                 if !service.is_protected() {
                     return Ok(None);
                 }
-
-                let result = ServicesJWT::sign(service);
-                if result.is_err() {
-                    return Err(result.unwrap_err());
-                }
-    
-                Ok(Some(result.unwrap()))
+                Ok(Some(ServicesJWT::sign(service)?))
             },
         }
     }
 
-    fn remove_token(headers: HeaderMap, service: &DBService) -> Result<Option<String>, AuthException> {
-        let o_token = find_token(headers);
-        if o_token.is_err() {
-            return Err(o_token.unwrap_err());
+    fn remove_token(headers: HeaderMap, service: &DBService) -> Result<Option<Cookie>, AuthException> {
+        let o_cookie = find_token(headers);
+        if o_cookie.is_err() {
+            return Err(o_cookie.unwrap_err());
         }
 
-        match o_token.unwrap() {
-            Some(token) => {
+        match o_cookie.unwrap() {
+            Some(cookie) => {
                 if !service.is_protected() {
-                    let result = Some(token);
-                    return Ok(result);
+                    return Ok(Some(cookie));
                 }
-
-                let result = ServicesJWT::remove(&token, service);
-                if result.is_err() {
-                    return Err(result.unwrap_err());
-                }
-                
-                Ok(Some(result.unwrap()))
+                Ok(Some(ServicesJWT::remove(&cookie.value, service)?))
             },
             None => return Ok(None),
         }
     }
     
+    fn build_token_response(cookie: Option<Cookie>, body: Body) -> impl IntoResponse {
+        let mut builder = Response::builder();
+        if cookie.is_some() {
+            builder = builder.header(SET_COOKIE, cookie.unwrap().to_string());
+        }
+
+        builder.status(StatusCode::OK)
+            .body(body)
+            .unwrap()
+    }
+
     fn not_found() -> Response<Body> {
         let error = ApiException::new(
             StatusCode::NOT_FOUND.as_u16(),

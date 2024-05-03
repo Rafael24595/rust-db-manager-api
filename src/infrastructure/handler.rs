@@ -15,8 +15,8 @@ pub(crate) async fn autentication_handler(headers: HeaderMap, Path(service): Pat
     let service = o_service.unwrap();
     if service.is_protected() {
         let o_token = find_token(headers);
-        if o_token.is_err() {
-            return Err(o_token.unwrap_err().into_response());
+        if let Err(exception) = o_token {
+            return Err(exception.into_response());
         }
 
         let token = o_token.unwrap();
@@ -25,9 +25,9 @@ pub(crate) async fn autentication_handler(headers: HeaderMap, Path(service): Pat
             return Err(exception.into_response());
         }
 
-        let result = ServicesJWT::verify(&token.unwrap());
-        if result.is_err() {
-            return Err(result.unwrap_err().into_response());
+        let result = ServicesJWT::verify(&token.unwrap().value);
+        if let Err(exception) = result {
+            return Err(exception.into_response());
         }
 
         let services = result.unwrap();

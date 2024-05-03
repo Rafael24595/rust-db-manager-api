@@ -1,6 +1,6 @@
 use axum::{body::Body, http::{header::{COOKIE, SET_COOKIE}, HeaderMap, Response, StatusCode}, response::IntoResponse};
 
-use crate::{commons::{configuration::web_configuration::WebConfiguration, exception::{api_exception::ApiException, auth_exception::AuthException}}, domain::cookie::jar::Jar};
+use crate::{commons::{configuration::web_configuration::WebConfiguration, exception::{api_exception::ApiException, auth_exception::AuthException}}, domain::cookie::{cookie::Cookie, jar::Jar}};
 
 use super::services_jwt::ServicesJWT;
 
@@ -19,10 +19,9 @@ impl IntoResponse for AuthException {
 
     fn into_response(self) -> Response<Body> {
         let mut builder = Response::builder();
-        if let Ok(token) = ServicesJWT::sign_empty() {
+        if let Ok(cookie) = ServicesJWT::sign_empty() {
             if self.reset() {
-                let cookie = format!("{}={}; Path=/; HttpOnly", WebConfiguration::COOKIE_NAME, token);
-                builder = builder.header(SET_COOKIE, cookie);
+                builder = builder.header(SET_COOKIE, cookie.to_string());
             }
         }
         
@@ -34,7 +33,7 @@ impl IntoResponse for AuthException {
 
 }
 
-pub(crate) fn find_token(headers: HeaderMap) -> Result<Option<String>, AuthException> {
+pub(crate) fn find_token(headers: HeaderMap) -> Result<Option<Cookie>, AuthException> {
     let o_cookies = headers.get(COOKIE);
     if o_cookies.is_none() {
         return Ok(None);
@@ -51,10 +50,5 @@ pub(crate) fn find_token(headers: HeaderMap) -> Result<Option<String>, AuthExcep
         return Err(jar.unwrap_err());
     }
 
-    let o_cookie = jar.unwrap().find(WebConfiguration::COOKIE_NAME);
-    if o_cookie.is_none() {
-        return Ok(None);
-    }
-
-    Ok(Some(o_cookie.unwrap().value))
+    Ok(jar.unwrap().find(WebConfiguration::COOKIE_NAME))
 }

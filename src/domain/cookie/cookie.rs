@@ -26,7 +26,7 @@ impl Cookie {
     }
 
     pub fn to_string(&self) -> String {
-        let mut cookie_string = format!("{}", self.value);
+        let mut cookie_string = format!("{}={}", self.code, self.value);
 
         if let Some(domain) = &self.domain {
             cookie_string.push_str(&format!("; Domain={}", domain));
