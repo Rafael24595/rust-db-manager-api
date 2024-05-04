@@ -52,3 +52,10 @@ pub(crate) fn find_token(headers: HeaderMap) -> Result<Option<Cookie>, AuthExcep
 
     Ok(jar.unwrap().find(WebConfiguration::COOKIE_NAME))
 }
+
+pub(crate) fn not_found() -> Response<Body> {
+    let error = ApiException::new(
+        StatusCode::NOT_FOUND.as_u16(),
+        String::from("Not found"));
+    return error.into_response();
+}

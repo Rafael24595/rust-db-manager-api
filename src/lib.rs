@@ -34,7 +34,8 @@ pub mod infrastructure {
         }
         pub mod dto_server_status;
     }
-    pub mod controller;
+    pub mod controller_database;
+    pub mod controller_server;
     pub mod db_assets;
     pub mod handler;
     pub mod pagination;

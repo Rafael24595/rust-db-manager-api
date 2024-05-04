@@ -4,16 +4,15 @@ use rust_db_manager_core::{commons::configuration::configuration::Configuration,
 
 use crate::{commons::{configuration::web_configuration::WebConfiguration, exception::{api_exception::ApiException, auth_exception::AuthException}}, domain::{builder_db_service::BuilderDBService, cookie::cookie::Cookie}};
 
-use super::{db_assets::WebEDBRepository, dto::{db_service::{dto_db_service::DTODBService, dto_db_service_lite::DTODBServiceLite, dto_db_service_suscribe::DTODBServiceSuscribe, dto_db_service_web_category::DTODBServiceWebCategory}, dto_server_status::DTOServerStatus, pagination::{dto_paginated_collection::DTOPaginatedCollection, dto_query_pagination::DTOQueryPagination}}, handler, pagination::Pagination, services_jwt::ServicesJWT, utils::find_token};
+use super::{db_assets::WebEDBRepository, dto::{db_service::{dto_db_service::DTODBService, dto_db_service_lite::DTODBServiceLite, dto_db_service_suscribe::DTODBServiceSuscribe, dto_db_service_web_category::DTODBServiceWebCategory}, dto_server_status::DTOServerStatus, pagination::{dto_paginated_collection::DTOPaginatedCollection, dto_query_pagination::DTOQueryPagination}}, handler, pagination::Pagination, services_jwt::ServicesJWT, utils::{self, find_token}};
 
-pub struct Controller{
+pub struct ControllerServer {
 }
 
-impl Controller {
+impl ControllerServer {
     
     pub fn route(router: Router) -> Router {
         router
-            .route("/:service/status", get(Self::service_status))
             .route("/:service", delete(Self::service_remove))
             .route_layer(middleware::from_fn(handler::autentication_handler))
             .route("/status", get(Self::status))
@@ -82,33 +81,12 @@ impl Controller {
         }
 
         Ok(Self::build_token_response(r_cookie.unwrap(), Body::empty()))
-    }
-
-    async fn service_status(Path(service): Path<String>) -> Result<(StatusCode, String), impl IntoResponse> {
-        let o_db_service = Configuration::find_service(service);
-        if o_db_service.is_none() {
-            return Err(Self::not_found());
-        }
-        
-        let result = o_db_service.unwrap().instance().await;
-        if let Err(error) = result {
-            let exception = ApiException::from(StatusCode::INTERNAL_SERVER_ERROR.as_u16(), error);
-            return Err(exception.into_response());
-        }
-
-        let status = result.unwrap().status().await;
-        if let Err(error) = status {
-            let exception = ApiException::from(StatusCode::INTERNAL_SERVER_ERROR.as_u16(), error);
-            return Err(exception.into_response());
-        }
-    
-        Ok((StatusCode::ACCEPTED, String::from("Service up.")))
-    }
+    } 
 
     async fn service_remove(headers: HeaderMap, Path(service): Path<String>) -> impl IntoResponse {
         let o_db_service = Configuration::find_service(service);
         if o_db_service.is_none() {
-            return Err(Self::not_found());
+            return Err(utils::not_found());
         }
 
         let db_service = o_db_service.unwrap();
@@ -172,13 +150,6 @@ impl Controller {
         builder.status(StatusCode::OK)
             .body(body)
             .unwrap()
-    }
-
-    fn not_found() -> Response<Body> {
-        let error = ApiException::new(
-            StatusCode::NOT_FOUND.as_u16(),
-            String::from("Not found"));
-        return error.into_response();
     }
 
 }
