@@ -35,7 +35,7 @@ impl ControllerDataBase {
             return Err(exception.into_response());
         }
     
-        Ok((StatusCode::ACCEPTED, String::from("Service up.")))
+        Ok((StatusCode::ACCEPTED, String::from("listening")))
     }
 
     async fn data_bases(Path(service): Path<String>) -> Result<Json<Vec<String>>, impl IntoResponse> {
