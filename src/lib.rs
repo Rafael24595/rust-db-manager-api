@@ -32,6 +32,8 @@ pub mod infrastructure {
             pub mod dto_paginated_collection;
             pub mod dto_query_pagination;
         }
+        pub mod dto_data_base_field;
+        pub mod dto_data_base_group;
         pub mod dto_server_status;
     }
     pub mod controller_database;

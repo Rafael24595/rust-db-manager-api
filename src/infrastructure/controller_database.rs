@@ -3,7 +3,7 @@ use rust_db_manager_core::commons::configuration::configuration::Configuration;
 
 use crate::commons::exception::api_exception::ApiException;
 
-use super::{handler, utils};
+use super::{dto::dto_data_base_group::DTODataBaseGroup, handler, utils};
 
 pub struct ControllerDataBase {
 }
@@ -13,6 +13,7 @@ impl ControllerDataBase {
     pub fn route(router: Router) -> Router {
         router
             .route("/:service/status", get(Self::status))
+            .route("/:service/metadata", get(Self::metadata))
             .route("/:service/data-base", get(Self::data_bases))
             .route_layer(middleware::from_fn(handler::autentication_handler))
     }
@@ -36,6 +37,31 @@ impl ControllerDataBase {
         }
     
         Ok((StatusCode::ACCEPTED, String::from("listening")))
+    }
+
+    async fn metadata(Path(service): Path<String>) -> Result<Json<Vec<DTODataBaseGroup>>, impl IntoResponse> {
+        let o_db_service = Configuration::find_service(service);
+        if o_db_service.is_none() {
+            return Err(utils::not_found());
+        }
+        
+        let result = o_db_service.unwrap().instance().await;
+        if let Err(error) = result {
+            let exception = ApiException::from(StatusCode::INTERNAL_SERVER_ERROR.as_u16(), error);
+            return Err(exception.into_response());
+        }
+
+        let metadata = result.unwrap().metadata().await;
+        if let Err(error) = metadata {
+            let exception = ApiException::from(StatusCode::INTERNAL_SERVER_ERROR.as_u16(), error);
+            return Err(exception.into_response());
+        }
+    
+        let dto = metadata.unwrap().iter()
+            .map(|g| DTODataBaseGroup::from(g))
+            .collect::<Vec<DTODataBaseGroup>>();
+
+        Ok(Json(dto))
     }
 
     async fn data_bases(Path(service): Path<String>) -> Result<Json<Vec<String>>, impl IntoResponse> {

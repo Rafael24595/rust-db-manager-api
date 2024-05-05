@@ -15,14 +15,14 @@ impl ControllerServer {
         router
             .route("/:service", delete(Self::service_remove))
             .route_layer(middleware::from_fn(handler::autentication_handler))
-            .route("/status", get(Self::status))
+            .route("/metadata", get(Self::metadata))
             .route("/support", get(Self::support))
             .route("/services", get(Self::services))
             .route("/publish", post(Self::publish))
             .route("/suscribe", post(Self::suscribe))
     }
 
-    async fn status() -> (StatusCode, Json<DTOServerStatus>) {
+    async fn metadata() -> (StatusCode, Json<DTOServerStatus>) {
         let result = WebConfiguration::as_dto();
         (StatusCode::ACCEPTED, Json(result))
     }
