@@ -134,7 +134,7 @@ impl ServicesJWT {
         let mut collection = Vec::new();
 
         for s_service in v_services.unwrap().split("-").filter(|s| !s.is_empty()).collect::<Vec<&str>>() {
-            let service =  Configuration::find_service(String::from(s_service));
+            let service =  Configuration::find_service(s_service);
             if service.is_none() {
                 let exception = AuthException::new_reset(500, String::from("Unknown service."));
                 return Err(exception);

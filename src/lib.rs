@@ -21,10 +21,15 @@ pub mod domain {
 pub mod infrastructure {
     pub mod dto {
         pub mod db_service {
+            pub mod db {
+                pub mod dto_db_create;
+            }
             pub mod dto_db_connection_data;
             pub mod dto_db_resources;
             pub mod dto_db_service_web_category;
             pub mod dto_db_service_lite;
+            pub mod dto_db_service_response_connection;
+            pub mod dto_db_service_response;
             pub mod dto_db_service_suscribe;
             pub mod dto_db_service;
         }

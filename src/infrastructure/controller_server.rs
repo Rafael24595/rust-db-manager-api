@@ -4,7 +4,7 @@ use rust_db_manager_core::{commons::configuration::configuration::Configuration,
 
 use crate::{commons::{configuration::web_configuration::WebConfiguration, exception::{api_exception::ApiException, auth_exception::AuthException}}, domain::{builder_db_service::BuilderDBService, cookie::cookie::Cookie}};
 
-use super::{db_assets::WebEDBRepository, dto::{db_service::{dto_db_service::DTODBService, dto_db_service_lite::DTODBServiceLite, dto_db_service_suscribe::DTODBServiceSuscribe, dto_db_service_web_category::DTODBServiceWebCategory}, dto_server_status::DTOServerStatus, pagination::{dto_paginated_collection::DTOPaginatedCollection, dto_query_pagination::DTOQueryPagination}}, handler, pagination::Pagination, services_jwt::ServicesJWT, utils::{self, find_token}};
+use super::{db_assets::WebEDBRepository, dto::{db_service::{dto_db_service::DTODBService, dto_db_service_lite::DTODBServiceLite, dto_db_service_response::DTODBServiceResponse, dto_db_service_suscribe::DTODBServiceSuscribe, dto_db_service_web_category::DTODBServiceWebCategory}, dto_server_status::DTOServerStatus, pagination::{dto_paginated_collection::DTOPaginatedCollection, dto_query_pagination::DTOQueryPagination}}, handler, pagination::Pagination, services_jwt::ServicesJWT, utils::{self, find_token}};
 
 pub struct ControllerServer {
 }
@@ -13,6 +13,7 @@ impl ControllerServer {
     
     pub fn route(router: Router) -> Router {
         router
+            .route("/:service", get(Self::service_find))
             .route("/:service", delete(Self::service_remove))
             .route_layer(middleware::from_fn(handler::autentication_handler))
             .route("/metadata", get(Self::metadata))
@@ -62,7 +63,7 @@ impl ControllerServer {
     }
 
     async fn suscribe(headers: HeaderMap, Json(dto): Json<DTODBServiceSuscribe>) -> impl IntoResponse {
-        let o_db_service = Configuration::find_service(dto.name);
+        let o_db_service = Configuration::find_service(&dto.name);
         if o_db_service.is_none() {
             let exception = ApiException::new(StatusCode::NOT_FOUND.as_u16(), String::from("Service not found."));
             return Err(exception.into_response());
@@ -81,10 +82,19 @@ impl ControllerServer {
         }
 
         Ok(Self::build_token_response(r_cookie.unwrap(), Body::empty()))
+    }
+
+    async fn service_find(Path(service): Path<String>) -> Result<Json<DTODBServiceResponse>,impl IntoResponse> {
+        let o_db_service = Configuration::find_service(&service);
+        if o_db_service.is_none() {
+            return Err(utils::not_found());
+        }
+        
+        Ok(Json(DTODBServiceResponse::from(o_db_service.unwrap())))
     } 
 
     async fn service_remove(headers: HeaderMap, Path(service): Path<String>) -> impl IntoResponse {
-        let o_db_service = Configuration::find_service(service);
+        let o_db_service = Configuration::find_service(&service);
         if o_db_service.is_none() {
             return Err(utils::not_found());
         }
