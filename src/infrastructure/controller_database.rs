@@ -14,9 +14,9 @@ impl ControllerDataBase {
         router
             .route("/:service/status", get(Self::status))
             .route("/:service/metadata", get(Self::metadata))
-            .route("/:service/data-base", get(Self::data_bases))
-            .route("/:service/data-base", post(Self::insert_base))
-            .route("/:service/data-base/:data_base", delete(Self::delete_base))
+            .route("/:service/data-base", get(Self::find_all))
+            .route("/:service/data-base", post(Self::insert))
+            .route("/:service/data-base/:data_base", delete(Self::delete))
             .route_layer(middleware::from_fn(handler::autentication_handler))
     }
 
@@ -53,7 +53,7 @@ impl ControllerDataBase {
             return Err(exception.into_response());
         }
 
-        let metadata = result.unwrap().metadata().await;
+        let metadata = result.unwrap().data_base_metadata().await;
         if let Err(error) = metadata {
             let exception = ApiException::from(StatusCode::INTERNAL_SERVER_ERROR.as_u16(), error);
             return Err(exception.into_response());
@@ -66,7 +66,7 @@ impl ControllerDataBase {
         Ok(Json(dto))
     }
 
-    async fn data_bases(Path(service): Path<String>) -> Result<Json<Vec<String>>, impl IntoResponse> {
+    async fn find_all(Path(service): Path<String>) -> Result<Json<Vec<String>>, impl IntoResponse> {
         let o_db_service = Configuration::find_service(&service);
         if o_db_service.is_none() {
             return Err(utils::not_found());
@@ -87,7 +87,7 @@ impl ControllerDataBase {
         Ok(Json(collection.unwrap()))
     }
 
-    async fn insert_base(Path(service): Path<String>, Json(dto): Json<DTODBCreate>) -> Result<StatusCode, impl IntoResponse> {
+    async fn insert(Path(service): Path<String>, Json(dto): Json<DTODBCreate>) -> Result<StatusCode, impl IntoResponse> {
         let o_db_service = Configuration::find_service(&service);
         if o_db_service.is_none() {
             return Err(utils::not_found());
@@ -101,7 +101,7 @@ impl ControllerDataBase {
 
         let query = GenerateDatabaseQuery::new(dto.data_base);
 
-        let collection = result.unwrap().create_data_base(query).await;
+        let collection = result.unwrap().create_data_base(&query).await;
         if let Err(error) = collection {
             let exception = ApiException::from(StatusCode::INTERNAL_SERVER_ERROR.as_u16(), error);
             return Err(exception.into_response());
@@ -110,7 +110,7 @@ impl ControllerDataBase {
         Ok(StatusCode::ACCEPTED)
     }
 
-    async fn delete_base(Path((service, data_base)): Path<(String, String)>) -> Result<StatusCode, impl IntoResponse> {
+    async fn delete(Path((service, data_base)): Path<(String, String)>) -> Result<StatusCode, impl IntoResponse> {
         let o_db_service = Configuration::find_service(&service);
         if o_db_service.is_none() {
             return Err(utils::not_found());
@@ -124,7 +124,7 @@ impl ControllerDataBase {
 
         let query = GenerateDatabaseQuery::new(data_base);
 
-        let collection = result.unwrap().drop_data_base(query).await;
+        let collection = result.unwrap().drop_data_base(&query).await;
         if let Err(error) = collection {
             let exception = ApiException::from(StatusCode::INTERNAL_SERVER_ERROR.as_u16(), error);
             return Err(exception.into_response());
