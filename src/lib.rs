@@ -33,6 +33,11 @@ pub mod infrastructure {
             pub mod dto_db_service_suscribe;
             pub mod dto_db_service;
         }
+        pub mod definition {
+            pub mod dto_field_attribute_default_definition;
+            pub mod dto_field_attribute_definition;
+            pub mod dto_field_definition;
+        }
         pub mod pagination {
             pub mod dto_paginated_collection;
             pub mod dto_query_pagination;

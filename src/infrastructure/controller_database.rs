@@ -3,7 +3,7 @@ use rust_db_manager_core::{commons::configuration::configuration::Configuration,
 
 use crate::commons::exception::api_exception::ApiException;
 
-use super::{dto::{db_service::db::dto_db_create::DTODBCreate, dto_data_base_group::DTODataBaseGroup}, handler, utils};
+use super::{dto::{db_service::db::dto_db_create::DTODBCreate, definition::dto_field_definition::DTOFieldDefinition, dto_data_base_group::DTODataBaseGroup}, handler, utils};
 
 pub struct ControllerDataBase {
 }
@@ -14,6 +14,7 @@ impl ControllerDataBase {
         router
             .route("/:service/status", get(Self::status))
             .route("/:service/metadata", get(Self::metadata))
+            .route("/:service/definition", get(Self::definition))
             .route("/:service/data-base", get(Self::find_all))
             .route("/:service/data-base", post(Self::insert))
             .route("/:service/data-base/:data_base", delete(Self::delete))
@@ -62,6 +63,31 @@ impl ControllerDataBase {
         let dto = metadata.unwrap().iter()
             .map(|g| DTODataBaseGroup::from(g))
             .collect::<Vec<DTODataBaseGroup>>();
+
+        Ok(Json(dto))
+    }
+
+    async fn definition(Path(service): Path<String>) -> Result<Json<Vec<DTOFieldDefinition>>, impl IntoResponse> {
+        let o_db_service = Configuration::find_service(&service);
+        if o_db_service.is_none() {
+            return Err(utils::not_found());
+        }
+        
+        let result = o_db_service.unwrap().instance().await;
+        if let Err(error) = result {
+            let exception = ApiException::from(StatusCode::INTERNAL_SERVER_ERROR.as_u16(), error);
+            return Err(exception.into_response());
+        }
+
+        let definition = result.unwrap().collection_accept_definition().await;
+        if let Err(error) = definition {
+            let exception = ApiException::from(StatusCode::INTERNAL_SERVER_ERROR.as_u16(), error);
+            return Err(exception.into_response());
+        }
+    
+        let dto = definition.unwrap().iter()
+            .map(|d| DTOFieldDefinition::from(d))
+            .collect::<Vec<DTOFieldDefinition>>();
 
         Ok(Json(dto))
     }
