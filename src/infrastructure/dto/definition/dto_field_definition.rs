@@ -8,8 +8,7 @@ pub struct DTOFieldDefinition {
     order: usize,
     name: String,
     code: String,
-    category: String,
-    size: bool,
+    swsize: bool,
     multiple: bool,
     attributes: Vec<DTOFieldAttributeDefinition>
 }
@@ -21,8 +20,7 @@ impl DTOFieldDefinition {
             order: definition.order(),
             name: definition.name(),
             code: definition.code().to_string(),
-            category: definition.category().to_string(),
-            size: definition.size(),
+            swsize: definition.swsize(),
             multiple: definition.multiple(),
             attributes: definition.attributes().iter()
                 .map(|a| DTOFieldAttributeDefinition::from(a))

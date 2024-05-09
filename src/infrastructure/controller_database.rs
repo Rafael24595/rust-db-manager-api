@@ -3,7 +3,7 @@ use rust_db_manager_core::{commons::configuration::configuration::Configuration,
 
 use crate::commons::exception::api_exception::ApiException;
 
-use super::{dto::{db_service::db::dto_db_create::DTODBCreate, definition::dto_field_definition::DTOFieldDefinition, dto_data_base_group::DTODataBaseGroup}, handler, utils};
+use super::{dto::{db_service::db::dto_db_create::DTODBCreate, definition::dto_collection_definition::DTOCollectionDefinition, dto_data_base_group::DTODataBaseGroup}, handler, utils};
 
 pub struct ControllerDataBase {
 }
@@ -67,7 +67,7 @@ impl ControllerDataBase {
         Ok(Json(dto))
     }
 
-    async fn definition(Path(service): Path<String>) -> Result<Json<Vec<DTOFieldDefinition>>, impl IntoResponse> {
+    async fn definition(Path(service): Path<String>) -> Result<Json<DTOCollectionDefinition>, impl IntoResponse> {
         let o_db_service = Configuration::find_service(&service);
         if o_db_service.is_none() {
             return Err(utils::not_found());
@@ -84,12 +84,8 @@ impl ControllerDataBase {
             let exception = ApiException::from(StatusCode::INTERNAL_SERVER_ERROR.as_u16(), error);
             return Err(exception.into_response());
         }
-    
-        let dto = definition.unwrap().iter()
-            .map(|d| DTOFieldDefinition::from(d))
-            .collect::<Vec<DTOFieldDefinition>>();
-
-        Ok(Json(dto))
+        
+        Ok(Json(DTOCollectionDefinition::from(definition.unwrap())))
     }
 
     async fn find_all(Path(service): Path<String>) -> Result<Json<Vec<String>>, impl IntoResponse> {

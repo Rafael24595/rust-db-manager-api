@@ -1,9 +1,9 @@
-use axum::{extract::Path, http::StatusCode, middleware, response::IntoResponse, routing::{delete, get}, Json, Router};
+use axum::{extract::Path, http::StatusCode, middleware, response::IntoResponse, routing::{delete, get, post}, Json, Router};
 use rust_db_manager_core::{commons::configuration::configuration::Configuration, domain::{filter::data_base_query::DataBaseQuery, generate::generate_collection_query::GenerateCollectionQuery}};
 
 use crate::commons::exception::api_exception::ApiException;
 
-use super::{dto::dto_data_base_group::DTODataBaseGroup, handler, utils};
+use super::{dto::{dto_data_base_group::DTODataBaseGroup, request::dto_generate_collection_query::DTOGenerateCollectionQuery}, handler, utils};
 
 pub struct ControllerCollection {
 }
@@ -14,6 +14,7 @@ impl ControllerCollection {
         router
             .route("/:service/data-base/:data_base/metadata", get(Self::metadata))
             .route("/:service/data-base/:data_base/collection", get(Self::find_all))
+            .route("/:service/data-base/:data_base/collection", post(Self::insert))
             .route("/:service/data-base/:data_base/collection/:collection", delete(Self::delete))
             .route_layer(middleware::from_fn(handler::autentication_handler))
     }
@@ -68,6 +69,32 @@ impl ControllerCollection {
         Ok(Json(collections.unwrap()))
     }
 
+    async fn insert(Path((service, _)): Path<(String, String)>, Json(dto): Json<DTOGenerateCollectionQuery>) -> Result<StatusCode, impl IntoResponse> {
+        let o_db_service = Configuration::find_service(&service);
+        if o_db_service.is_none() {
+            return Err(utils::not_found());
+        }
+        
+        let result = o_db_service.unwrap().instance().await;
+        if let Err(error) = result {
+            let exception = ApiException::from(StatusCode::INTERNAL_SERVER_ERROR.as_u16(), error);
+            return Err(exception.into_response());
+        }
+
+        let query = dto.from_dto();
+        if let Err(exception) = query {
+            return Err(exception.into_response());
+        }
+
+        let collection = result.unwrap().create_collection(&query.unwrap()).await;
+        if let Err(error) = collection {
+            let exception = ApiException::from(StatusCode::INTERNAL_SERVER_ERROR.as_u16(), error);
+            return Err(exception.into_response());
+        }
+    
+        Ok(StatusCode::ACCEPTED)
+    }
+
     async fn delete(Path((service, data_base, collection)): Path<(String, String, String)>) -> Result<StatusCode, impl IntoResponse> {
         let o_db_service = Configuration::find_service(&service);
         if o_db_service.is_none() {
@@ -80,7 +107,7 @@ impl ControllerCollection {
             return Err(exception.into_response());
         }
 
-        let query = GenerateCollectionQuery::new(data_base, collection);
+        let query = GenerateCollectionQuery::from_collection(data_base, collection);
 
         let collection = result.unwrap().drop_collection(&query).await;
         if let Err(error) = collection {

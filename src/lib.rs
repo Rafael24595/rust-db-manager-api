@@ -34,13 +34,20 @@ pub mod infrastructure {
             pub mod dto_db_service;
         }
         pub mod definition {
+            pub mod dto_collection_definition;
+            pub mod dto_field_atribute;
             pub mod dto_field_attribute_default_definition;
             pub mod dto_field_attribute_definition;
             pub mod dto_field_definition;
+            pub mod dto_field_reference;
+            pub mod dto_field_data;
         }
         pub mod pagination {
             pub mod dto_paginated_collection;
             pub mod dto_query_pagination;
+        }
+        pub mod request {
+            pub mod dto_generate_collection_query;
         }
         pub mod dto_data_base_field;
         pub mod dto_data_base_group;
