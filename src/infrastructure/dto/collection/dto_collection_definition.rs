@@ -1,7 +1,7 @@
-use rust_db_manager_core::domain::definition::collection_definition::CollectionDefinition;
+use rust_db_manager_core::domain::collection::collection_definition::CollectionDefinition;
 use serde::Serialize;
 
-use super::{dto_field_data::DTOFieldData, dto_field_definition::DTOFieldDefinition};
+use crate::infrastructure::dto::field::{definition::dto_field_definition::DTOFieldDefinition, generate::dto_field_data::DTOFieldData};
 
 #[derive(Clone, Serialize)]
 pub struct DTOCollectionDefinition {

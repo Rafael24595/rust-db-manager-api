@@ -1,4 +1,4 @@
-use rust_db_manager_core::domain::generate::field::field_reference::FieldReference;
+use rust_db_manager_core::domain::field::generate::field_reference::FieldReference;
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Serialize, Deserialize)]

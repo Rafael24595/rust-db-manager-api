@@ -1,17 +1,17 @@
-use rust_db_manager_core::domain::data_base_field::DataBaseField;
+use rust_db_manager_core::domain::table::table_data_field::TableDataField;
 use serde::Serialize;
 
 #[derive(Clone, Serialize)]
-pub struct DTODataBaseField {
+pub struct DTOTableDataField {
     order: usize,
     name: String,
     value: String,
     json_type: String,
 }
 
-impl DTODataBaseField {
+impl DTOTableDataField {
     
-    pub fn from(data: &DataBaseField) -> DTODataBaseField {
+    pub fn from(data: &TableDataField) -> Self {
         Self {
             order: data.order(),
             name: data.name(),

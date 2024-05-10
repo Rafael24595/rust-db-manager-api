@@ -1,4 +1,4 @@
-use rust_db_manager_core::domain::generate::field::field_attribute::FieldAttribute;
+use rust_db_manager_core::domain::field::generate::field_attribute::FieldAttribute;
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Serialize, Deserialize)]

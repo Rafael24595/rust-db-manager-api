@@ -1,20 +1,21 @@
 use rust_db_manager_core::domain::connection_data::ConnectionData;
-use serde::{Deserialize, Serialize};
+use serde::Serialize;
 
-use super::dto_db_resources::DTODBResources;
 use crate::infrastructure::db_assets::WebEDBRepository;
 
-#[derive(Clone, Serialize, Deserialize)]
-pub struct DTODBServiceResponseConnection {
+use super::dto_service_resources::DTOServiceResources;
+
+#[derive(Clone, Serialize)]
+pub struct DTOServiceCategory {
     pub category: String,
     pub connection: String,
-    pub resources: DTODBResources
+    pub resources: DTOServiceResources
 }
 
-impl DTODBServiceResponseConnection {
+impl DTOServiceCategory {
     
-    pub fn from(connection: ConnectionData) -> DTODBServiceResponseConnection {
-        DTODBServiceResponseConnection {
+    pub fn from(connection: ConnectionData) -> Self {
+        Self {
             category: connection.category().to_string(),
             connection: connection.connection(),
             resources: connection.category().resources()

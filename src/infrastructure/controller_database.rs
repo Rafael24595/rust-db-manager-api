@@ -1,9 +1,9 @@
 use axum::{extract::Path, http::StatusCode, middleware, response::IntoResponse, routing::{delete, get, post}, Json, Router};
-use rust_db_manager_core::{commons::configuration::configuration::Configuration, domain::generate::generate_database_query::GenerateDatabaseQuery};
+use rust_db_manager_core::{commons::configuration::configuration::Configuration, domain::data_base::generate_database_query::GenerateDatabaseQuery};
 
 use crate::commons::exception::api_exception::ApiException;
 
-use super::{dto::{db_service::db::dto_db_create::DTODBCreate, definition::dto_collection_definition::DTOCollectionDefinition, dto_data_base_group::DTODataBaseGroup}, handler, utils};
+use super::{dto::{collection::dto_collection_definition::DTOCollectionDefinition, data_base::dto_generate_data_base_query::DTOGenerateDatabaseQuery, table::dto_table_data_group::DTOTableDataGroup}, handler, utils};
 
 pub struct ControllerDataBase {
 }
@@ -42,7 +42,7 @@ impl ControllerDataBase {
         Ok((StatusCode::ACCEPTED, String::from("listening")))
     }
 
-    async fn metadata(Path(service): Path<String>) -> Result<Json<Vec<DTODataBaseGroup>>, impl IntoResponse> {
+    async fn metadata(Path(service): Path<String>) -> Result<Json<Vec<DTOTableDataGroup>>, impl IntoResponse> {
         let o_db_service = Configuration::find_service(&service);
         if o_db_service.is_none() {
             return Err(utils::not_found());
@@ -61,8 +61,8 @@ impl ControllerDataBase {
         }
     
         let dto = metadata.unwrap().iter()
-            .map(|g| DTODataBaseGroup::from(g))
-            .collect::<Vec<DTODataBaseGroup>>();
+            .map(|g| DTOTableDataGroup::from(g))
+            .collect();
 
         Ok(Json(dto))
     }
@@ -109,7 +109,7 @@ impl ControllerDataBase {
         Ok(Json(collection.unwrap()))
     }
 
-    async fn insert(Path(service): Path<String>, Json(dto): Json<DTODBCreate>) -> Result<StatusCode, impl IntoResponse> {
+    async fn insert(Path(service): Path<String>, Json(dto): Json<DTOGenerateDatabaseQuery>) -> Result<StatusCode, impl IntoResponse> {
         let o_db_service = Configuration::find_service(&service);
         if o_db_service.is_none() {
             return Err(utils::not_found());

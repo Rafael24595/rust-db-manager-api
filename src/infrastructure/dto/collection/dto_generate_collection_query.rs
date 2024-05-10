@@ -1,7 +1,7 @@
-use rust_db_manager_core::domain::generate::generate_collection_query::GenerateCollectionQuery;
+use rust_db_manager_core::domain::collection::generate_collection_query::GenerateCollectionQuery;
 use serde::Deserialize;
 
-use crate::{commons::exception::api_exception::ApiException, infrastructure::dto::definition::dto_field_data::DTOFieldData};
+use crate::{commons::exception::api_exception::ApiException, infrastructure::dto::field::generate::dto_field_data::DTOFieldData};
 
 #[derive(Clone, Deserialize)]
 pub struct DTOGenerateCollectionQuery {

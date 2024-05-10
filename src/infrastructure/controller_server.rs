@@ -4,7 +4,7 @@ use rust_db_manager_core::{commons::configuration::configuration::Configuration,
 
 use crate::{commons::{configuration::web_configuration::WebConfiguration, exception::{api_exception::ApiException, auth_exception::AuthException}}, domain::{builder_db_service::BuilderDBService, cookie::cookie::Cookie}};
 
-use super::{db_assets::WebEDBRepository, dto::{db_service::{dto_db_service::DTODBService, dto_db_service_lite::DTODBServiceLite, dto_db_service_response::DTODBServiceResponse, dto_db_service_suscribe::DTODBServiceSuscribe, dto_db_service_web_category::DTODBServiceWebCategory}, dto_server_status::DTOServerStatus, pagination::{dto_paginated_collection::DTOPaginatedCollection, dto_query_pagination::DTOQueryPagination}}, handler, pagination::Pagination, services_jwt::ServicesJWT, utils::{self, find_token}};
+use super::{db_assets::WebEDBRepository, dto::{dto_server_status::DTOServerStatus, pagination::{dto_paginated_collection::DTOPaginatedCollection, dto_query_pagination::DTOQueryPagination}, service::{definition::{dto_service::DTOService, dto_service_category_lite::DTOServiceCategoryLite, dto_service_lite::DTOServiceLite}, generate::{dto_service_create_request::DTOServiceRequest, dto_service_suscribe_request::DTOServiceSuscribeRequest}}}, handler, pagination::Pagination, services_jwt::ServicesJWT, utils::{self, find_token}};
 
 pub struct ControllerServer {
 }
@@ -23,24 +23,51 @@ impl ControllerServer {
             .route("/suscribe", post(Self::suscribe))
     }
 
+    async fn service_find(Path(service): Path<String>) -> Result<Json<DTOService>,impl IntoResponse> {
+        let o_db_service = Configuration::find_service(&service);
+        if o_db_service.is_none() {
+            return Err(utils::not_found());
+        }
+        
+        Ok(Json(DTOService::from(o_db_service.unwrap())))
+    } 
+
+    async fn service_remove(headers: HeaderMap, Path(service): Path<String>) -> impl IntoResponse {
+        let o_db_service = Configuration::find_service(&service);
+        if o_db_service.is_none() {
+            return Err(utils::not_found());
+        }
+
+        let db_service = o_db_service.unwrap();
+
+        let r_cookie = Self::remove_token(headers, &db_service);
+        if let Err(exception) = r_cookie {
+            return Err(exception.into_response());
+        }
+
+        Configuration::remove_service(db_service);
+
+        Ok(Self::build_token_response(r_cookie.unwrap(), Body::empty()))
+    }
+
     async fn metadata() -> (StatusCode, Json<DTOServerStatus>) {
         let result = WebConfiguration::as_dto();
         (StatusCode::ACCEPTED, Json(result))
     }
 
-    async fn support() -> (StatusCode, Json<Vec<DTODBServiceWebCategory>>) {
+    async fn support() -> (StatusCode, Json<Vec<DTOServiceCategoryLite>>) {
         let dto = EDBRepository::supported();
         (StatusCode::ACCEPTED, Json(dto))
     }
 
-    async fn services(Query(params): Query<DTOQueryPagination>) -> (StatusCode, Json<DTOPaginatedCollection<DTODBServiceLite>>) {
+    async fn services(Query(params): Query<DTOQueryPagination>) -> (StatusCode, Json<DTOPaginatedCollection<DTOServiceLite>>) {
         let services = Configuration::find_services();
-        let dto = DTODBServiceLite::from_vec(services);
+        let dto = services.iter().map(|s| DTOServiceLite::from(s)).collect();
         let result = Pagination::paginate(params, dto);
         (StatusCode::ACCEPTED, Json(result))
     }
 
-    async fn publish(headers: HeaderMap, Json(dto): Json<DTODBService>) -> impl IntoResponse {
+    async fn publish(headers: HeaderMap, Json(dto): Json<DTOServiceRequest>) -> impl IntoResponse {
         let o_service = BuilderDBService::make(dto);
         if let Err(error) = o_service {
             return Err(error.into_response());
@@ -62,7 +89,7 @@ impl ControllerServer {
         Ok(Self::build_token_response(r_cookie.unwrap(), Body::empty()))
     }
 
-    async fn suscribe(headers: HeaderMap, Json(dto): Json<DTODBServiceSuscribe>) -> impl IntoResponse {
+    async fn suscribe(headers: HeaderMap, Json(dto): Json<DTOServiceSuscribeRequest>) -> impl IntoResponse {
         let o_db_service = Configuration::find_service(&dto.name);
         if o_db_service.is_none() {
             let exception = ApiException::new(StatusCode::NOT_FOUND.as_u16(), String::from("Service not found."));
@@ -80,33 +107,6 @@ impl ControllerServer {
         if let Err(exception) = r_cookie {
             return Err(exception.into_response());
         }
-
-        Ok(Self::build_token_response(r_cookie.unwrap(), Body::empty()))
-    }
-
-    async fn service_find(Path(service): Path<String>) -> Result<Json<DTODBServiceResponse>,impl IntoResponse> {
-        let o_db_service = Configuration::find_service(&service);
-        if o_db_service.is_none() {
-            return Err(utils::not_found());
-        }
-        
-        Ok(Json(DTODBServiceResponse::from(o_db_service.unwrap())))
-    } 
-
-    async fn service_remove(headers: HeaderMap, Path(service): Path<String>) -> impl IntoResponse {
-        let o_db_service = Configuration::find_service(&service);
-        if o_db_service.is_none() {
-            return Err(utils::not_found());
-        }
-
-        let db_service = o_db_service.unwrap();
-
-        let r_cookie = Self::remove_token(headers, &db_service);
-        if let Err(exception) = r_cookie {
-            return Err(exception.into_response());
-        }
-
-        Configuration::remove_service(db_service);
 
         Ok(Self::build_token_response(r_cookie.unwrap(), Body::empty()))
     }

@@ -1,4 +1,4 @@
-use rust_db_manager_core::domain::definition::field::field_attribute_definition::FieldAttributeDefinition;
+use rust_db_manager_core::domain::field::definition::field_attribute_definition::FieldAttributeDefinition;
 use serde::Serialize;
 
 use super::dto_field_attribute_default_definition::DTOFieldAttributeDefaultDefinition;

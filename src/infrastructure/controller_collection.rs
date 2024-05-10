@@ -1,9 +1,9 @@
 use axum::{extract::Path, http::StatusCode, middleware, response::IntoResponse, routing::{delete, get, post}, Json, Router};
-use rust_db_manager_core::{commons::configuration::configuration::Configuration, domain::{filter::data_base_query::DataBaseQuery, generate::generate_collection_query::GenerateCollectionQuery}};
+use rust_db_manager_core::{commons::configuration::configuration::Configuration, domain::{collection::generate_collection_query::GenerateCollectionQuery, filter::data_base_query::DataBaseQuery}};
 
 use crate::commons::exception::api_exception::ApiException;
 
-use super::{dto::{dto_data_base_group::DTODataBaseGroup, request::dto_generate_collection_query::DTOGenerateCollectionQuery}, handler, utils};
+use super::{dto::{collection::dto_generate_collection_query::DTOGenerateCollectionQuery, table::dto_table_data_group::DTOTableDataGroup}, handler, utils};
 
 pub struct ControllerCollection {
 }
@@ -19,7 +19,7 @@ impl ControllerCollection {
             .route_layer(middleware::from_fn(handler::autentication_handler))
     }
 
-    async fn metadata(Path((service, data_base)): Path<(String, String)>) -> Result<Json<Vec<DTODataBaseGroup>>, impl IntoResponse> {
+    async fn metadata(Path((service, data_base)): Path<(String, String)>) -> Result<Json<Vec<DTOTableDataGroup>>, impl IntoResponse> {
         let o_db_service = Configuration::find_service(&service);
         if o_db_service.is_none() {
             return Err(utils::not_found());
@@ -40,8 +40,8 @@ impl ControllerCollection {
         }
     
         let dto = metadata.unwrap().iter()
-            .map(|g| DTODataBaseGroup::from(g))
-            .collect::<Vec<DTODataBaseGroup>>();
+            .map(|g| DTOTableDataGroup::from(g))
+            .collect();
 
         Ok(Json(dto))
     }

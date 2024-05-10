@@ -1,4 +1,4 @@
-use rust_db_manager_core::domain::{definition::field::e_field_code::EFieldCode, generate::field::field_data::FieldData};
+use rust_db_manager_core::domain::field::{e_field_code::EFieldCode, generate::field_data::FieldData};
 use serde::{Deserialize, Serialize};
 
 use crate::commons::exception::api_exception::ApiException;

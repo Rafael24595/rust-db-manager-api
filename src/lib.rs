@@ -20,37 +20,52 @@ pub mod domain {
 }
 pub mod infrastructure {
     pub mod dto {
-        pub mod db_service {
-            pub mod db {
-                pub mod dto_db_create;
-            }
-            pub mod dto_db_connection_data;
-            pub mod dto_db_resources;
-            pub mod dto_db_service_web_category;
-            pub mod dto_db_service_lite;
-            pub mod dto_db_service_response_connection;
-            pub mod dto_db_service_response;
-            pub mod dto_db_service_suscribe;
-            pub mod dto_db_service;
-        }
-        pub mod definition {
+        pub mod collection {
+            pub mod dto_generate_collection_query;
             pub mod dto_collection_definition;
-            pub mod dto_field_atribute;
-            pub mod dto_field_attribute_default_definition;
-            pub mod dto_field_attribute_definition;
-            pub mod dto_field_definition;
-            pub mod dto_field_reference;
-            pub mod dto_field_data;
+        }
+        pub mod data_base {
+            pub mod dto_generate_data_base_query;
+        }
+        pub mod document {
+            pub mod dto_document_data;
+            pub mod dto_document_key_attribute;
+            pub mod dto_document_key;
+        }
+        pub mod field {
+            pub mod definition {
+                pub mod dto_field_attribute_default_definition;
+                pub mod dto_field_attribute_definition;
+                pub mod dto_field_definition;
+            }
+            pub mod generate {
+                pub mod dto_field_atribute;
+                pub mod dto_field_data;
+                pub mod dto_field_reference;
+            }
         }
         pub mod pagination {
             pub mod dto_paginated_collection;
             pub mod dto_query_pagination;
         }
-        pub mod request {
-            pub mod dto_generate_collection_query;
+        pub mod service {
+            pub mod definition {
+                pub mod dto_service_category_lite;
+                pub mod dto_service_category;
+                pub mod dto_service_lite;
+                pub mod dto_service_resources;
+                pub mod dto_service;
+            }
+            pub mod generate {
+                pub mod dto_db_connection_data;
+                pub mod dto_service_create_request;
+                pub mod dto_service_suscribe_request;
+            }
         }
-        pub mod dto_data_base_field;
-        pub mod dto_data_base_group;
+        pub mod table {
+            pub mod dto_table_data_field;
+            pub mod dto_table_data_group;
+        }
         pub mod dto_server_status;
     }
     pub mod controller_collection;
