@@ -1,11 +1,11 @@
 use rust_db_manager_core::domain::document::document_key_attribute::DocumentKeyAttribute;
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 
 
-#[derive(Clone, Serialize)]
+#[derive(Clone, Serialize, Deserialize)]
 pub struct DTODocumentKeyAttribute {
-    key: String,
-    value: String
+    pub key: String,
+    pub value: String
 }
 
 impl DTODocumentKeyAttribute {
