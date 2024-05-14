@@ -31,6 +31,7 @@ pub mod infrastructure {
             pub mod dto_document_data;
             pub mod dto_document_key_attribute;
             pub mod dto_document_key;
+            pub mod dto_document_schema;
         }
         pub mod field {
             pub mod definition {
@@ -66,7 +67,9 @@ pub mod infrastructure {
             pub mod dto_table_data_field;
             pub mod dto_table_data_group;
         }
+        pub mod dto_create_document;
         pub mod dto_server_status;
+        pub mod dto_update_document;
     }
     pub mod controller_collection;
     pub mod controller_database;

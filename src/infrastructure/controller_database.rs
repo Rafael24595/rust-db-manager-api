@@ -1,9 +1,26 @@
-use axum::{extract::Path, http::StatusCode, middleware, response::IntoResponse, routing::{delete, get, post}, Json, Router};
-use rust_db_manager_core::{commons::configuration::configuration::Configuration, domain::data_base::generate_database_query::GenerateDatabaseQuery};
+use axum::{
+    extract::Path,
+    http::StatusCode,
+    middleware,
+    response::IntoResponse,
+    routing::{delete, get, post},
+    Json, Router,
+};
+use rust_db_manager_core::{
+    commons::configuration::configuration::Configuration,
+    domain::data_base::generate_database_query::GenerateDatabaseQuery,
+};
 
 use crate::commons::exception::api_exception::ApiException;
 
-use super::{dto::{collection::dto_collection_definition::DTOCollectionDefinition, data_base::dto_generate_data_base_query::DTOGenerateDatabaseQuery, table::dto_table_data_group::DTOTableDataGroup}, handler, utils};
+use super::{
+    dto::{
+        collection::dto_collection_definition::DTOCollectionDefinition,
+        data_base::dto_generate_data_base_query::DTOGenerateDatabaseQuery,
+        table::dto_table_data_group::DTOTableDataGroup,
+    },
+    handler, utils,
+};
 
 pub struct ControllerDataBase {
 }
@@ -14,7 +31,7 @@ impl ControllerDataBase {
         router
             .route("/:service/status", get(Self::status))
             .route("/:service/metadata", get(Self::metadata))
-            .route("/:service/definition", get(Self::definition))
+            .route("/:service/schema", get(Self::schema))
             .route("/:service/data-base", get(Self::find_all))
             .route("/:service/data-base", post(Self::insert))
             .route("/:service/data-base/:data_base", delete(Self::delete))
@@ -54,7 +71,7 @@ impl ControllerDataBase {
             return Err(exception.into_response());
         }
 
-        let metadata = result.unwrap().data_base_metadata().await;
+        let metadata = result.unwrap().metadata().await;
         if let Err(error) = metadata {
             let exception = ApiException::from(StatusCode::INTERNAL_SERVER_ERROR.as_u16(), error);
             return Err(exception.into_response());
@@ -67,7 +84,7 @@ impl ControllerDataBase {
         Ok(Json(dto))
     }
 
-    async fn definition(Path(service): Path<String>) -> Result<Json<DTOCollectionDefinition>, impl IntoResponse> {
+    async fn schema(Path(service): Path<String>) -> Result<Json<DTOCollectionDefinition>, impl IntoResponse> {
         let o_db_service = Configuration::find_service(&service);
         if o_db_service.is_none() {
             return Err(utils::not_found());
@@ -79,7 +96,7 @@ impl ControllerDataBase {
             return Err(exception.into_response());
         }
 
-        let definition = result.unwrap().collection_accept_definition().await;
+        let definition = result.unwrap().collection_accept_schema().await;
         if let Err(error) = definition {
             let exception = ApiException::from(StatusCode::INTERNAL_SERVER_ERROR.as_u16(), error);
             return Err(exception.into_response());
@@ -100,7 +117,7 @@ impl ControllerDataBase {
             return Err(exception.into_response());
         }
 
-        let collection = result.unwrap().list_data_bases().await;
+        let collection = result.unwrap().data_base_find_all().await;
         if let Err(error) = collection {
             let exception = ApiException::from(StatusCode::INTERNAL_SERVER_ERROR.as_u16(), error);
             return Err(exception.into_response());
@@ -123,7 +140,7 @@ impl ControllerDataBase {
 
         let query = GenerateDatabaseQuery::new(dto.data_base);
 
-        let collection = result.unwrap().create_data_base(&query).await;
+        let collection = result.unwrap().data_base_create(&query).await;
         if let Err(error) = collection {
             let exception = ApiException::from(StatusCode::INTERNAL_SERVER_ERROR.as_u16(), error);
             return Err(exception.into_response());
@@ -146,7 +163,7 @@ impl ControllerDataBase {
 
         let query = GenerateDatabaseQuery::new(data_base);
 
-        let collection = result.unwrap().drop_data_base(&query).await;
+        let collection = result.unwrap().data_base_drop(&query).await;
         if let Err(error) = collection {
             let exception = ApiException::from(StatusCode::INTERNAL_SERVER_ERROR.as_u16(), error);
             return Err(exception.into_response());

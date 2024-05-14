@@ -1,9 +1,28 @@
-use axum::{extract::Path, http::StatusCode, middleware, response::IntoResponse, routing::{delete, get, post}, Json, Router};
-use rust_db_manager_core::{commons::configuration::configuration::Configuration, domain::{collection::generate_collection_query::GenerateCollectionQuery, filter::data_base_query::DataBaseQuery}};
+use axum::{
+    extract::Path,
+    http::StatusCode,
+    middleware,
+    response::IntoResponse,
+    routing::{delete, get, post},
+    Json, Router,
+};
+use rust_db_manager_core::{
+    commons::configuration::configuration::Configuration,
+    domain::{
+        collection::generate_collection_query::GenerateCollectionQuery,
+        filter::data_base_query::DataBaseQuery,
+    },
+};
 
 use crate::commons::exception::api_exception::ApiException;
 
-use super::{dto::{collection::dto_generate_collection_query::DTOGenerateCollectionQuery, table::dto_table_data_group::DTOTableDataGroup}, handler, utils};
+use super::{
+    dto::{
+        collection::dto_generate_collection_query::DTOGenerateCollectionQuery,
+        table::dto_table_data_group::DTOTableDataGroup,
+    },
+    handler, utils,
+};
 
 pub struct ControllerCollection {
 }
@@ -33,7 +52,7 @@ impl ControllerCollection {
 
         let query = DataBaseQuery::from_data_base(data_base);
 
-        let metadata = result.unwrap().data_base_collections_metadata(&query).await;
+        let metadata = result.unwrap().data_base_metadata(&query).await;
         if let Err(error) = metadata {
             let exception = ApiException::from(StatusCode::INTERNAL_SERVER_ERROR.as_u16(), error);
             return Err(exception.into_response());
@@ -60,7 +79,7 @@ impl ControllerCollection {
 
         let query = DataBaseQuery::from_data_base(data_base);
 
-        let collections = result.unwrap().list_collections(&query).await;
+        let collections = result.unwrap().collection_find_all(&query).await;
         if let Err(error) = collections {
             let exception = ApiException::from(StatusCode::INTERNAL_SERVER_ERROR.as_u16(), error);
             return Err(exception.into_response());
@@ -86,7 +105,7 @@ impl ControllerCollection {
             return Err(exception.into_response());
         }
 
-        let collection = result.unwrap().create_collection(&query.unwrap()).await;
+        let collection = result.unwrap().collection_create(&query.unwrap()).await;
         if let Err(error) = collection {
             let exception = ApiException::from(StatusCode::INTERNAL_SERVER_ERROR.as_u16(), error);
             return Err(exception.into_response());
@@ -109,7 +128,7 @@ impl ControllerCollection {
 
         let query = GenerateCollectionQuery::from_collection(data_base, collection);
 
-        let collection = result.unwrap().drop_collection(&query).await;
+        let collection = result.unwrap().collection_drop(&query).await;
         if let Err(error) = collection {
             let exception = ApiException::from(StatusCode::INTERNAL_SERVER_ERROR.as_u16(), error);
             return Err(exception.into_response());
