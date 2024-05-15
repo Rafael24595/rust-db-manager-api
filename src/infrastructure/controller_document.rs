@@ -17,13 +17,9 @@ use crate::commons::exception::api_exception::ApiException;
 
 use super::{
     dto::{
-        document::{
-            dto_document_data::DTODocumentData, dto_document_key::DTODocumentKey,
-            dto_document_schema::DTODocumentSchema,
-        },
+        document::{dto_document_data::DTODocumentData, dto_document_key::DTODocumentKey},
         dto_create_document::DTOCreateDocument,
         dto_update_document::DTOUpdateDocument,
-        table::dto_table_data_group::DTOTableDataGroup,
     },
     handler, utils,
 };
@@ -35,64 +31,12 @@ impl ControllerDocument {
     
     pub fn route(router: Router) -> Router {
         router
-            .route("/:service/data-base/:data_base/collection/:collection/metadata", get(Self::metadata))
-            .route("/:service/data-base/:data_base/collection/:collection/schema", get(Self::schema))
-            .route("/:service/data-base/:data_base/collection/:collection/document/find", get(Self::find_all))
-            .route("/:service/data-base/:data_base/collection/:collection/document/find", post(Self::find))
-            .route("/:service/data-base/:data_base/collection/:collection/document/query", post(Self::insert))
-            .route("/:service/data-base/:data_base/collection/:collection/document/query", put(Self::update))
-            .route("/:service/data-base/:data_base/collection/:collection/document/query", delete(Self::delete))
+            .route("/api/v1/service/:service/data-base/:data_base/collection/:collection/document/find", get(Self::find_all))
+            .route("/api/v1/service/:service/data-base/:data_base/collection/:collection/document/find", post(Self::find))
+            .route("/api/v1/service/:service/data-base/:data_base/collection/:collection/document/action", post(Self::insert))
+            .route("/api/v1/service/:service/data-base/:data_base/collection/:collection/document/action", put(Self::update))
+            .route("/api/v1/service/:service/data-base/:data_base/collection/:collection/document/action", delete(Self::delete))
             .route_layer(middleware::from_fn(handler::autentication_handler))
-    }
-
-    async fn metadata(Path((service, data_base, collection)): Path<(String, String, String)>) -> Result<Json<Vec<DTOTableDataGroup>>, impl IntoResponse> {
-        let o_db_service = Configuration::find_service(&service);
-        if o_db_service.is_none() {
-            return Err(utils::not_found());
-        }
-
-        let result = o_db_service.unwrap().instance().await;
-        if let Err(error) = result {
-            let exception = ApiException::from(StatusCode::INTERNAL_SERVER_ERROR.as_u16(), error);
-            return Err(exception.into_response());
-        }
-
-        let query = DataBaseQuery::from(data_base, collection);
-
-        let metadata = result.unwrap().collection_metadata(&query).await;
-        if let Err(error) = metadata {
-            let exception = ApiException::from(StatusCode::INTERNAL_SERVER_ERROR.as_u16(), error);
-            return Err(exception.into_response());
-        }
-    
-        let dto = metadata.unwrap().iter()
-            .map(|g| DTOTableDataGroup::from(g))
-            .collect();
-
-        Ok(Json(dto))
-    }
-
-    async fn schema(Path((service, data_base, collection)): Path<(String, String, String)>) -> Result<Json<DTODocumentSchema>, impl IntoResponse> {
-        let o_db_service = Configuration::find_service(&service);
-        if o_db_service.is_none() {
-            return Err(utils::not_found());
-        }
-        
-        let result = o_db_service.unwrap().instance().await;
-        if let Err(error) = result {
-            let exception = ApiException::from(StatusCode::INTERNAL_SERVER_ERROR.as_u16(), error);
-            return Err(exception.into_response());
-        }
-
-        let query = DataBaseQuery::from(data_base, collection);
-
-        let schema = result.unwrap().schema(&query).await;
-        if let Err(error) = schema {
-            let exception = ApiException::from(StatusCode::INTERNAL_SERVER_ERROR.as_u16(), error);
-            return Err(exception.into_response());
-        }
-    
-        Ok(Json(DTODocumentSchema::from(&schema.unwrap())))
     }
 
     async fn find(Path((service, data_base, collection)): Path<(String, String, String)>, Json(dto): Json<Vec<DTODocumentKey>>) -> Result<Json<DTODocumentData>, impl IntoResponse> {

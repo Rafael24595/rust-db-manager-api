@@ -3,7 +3,7 @@ use std::net::SocketAddr;
 use tower_http::cors::CorsLayer;
 
 use axum::Router;
-use rust_db_manager_api::{commons::configuration::web_configuration::WebConfiguration, infrastructure::{controller_collection::ControllerCollection, controller_database::ControllerDataBase, controller_document::ControllerDocument, controller_server::ControllerServer}};
+use rust_db_manager_api::{commons::configuration::web_configuration::WebConfiguration, infrastructure::{controller_collection::ControllerCollection, controller_database::ControllerDataBase, controller_document::ControllerDocument, controller_server::ControllerServer, controller_service::ControllerService}};
 
 #[tokio::main]
 async fn main() {
@@ -11,6 +11,7 @@ async fn main() {
     
     let app = Router::new()
         .merge(ControllerServer::route(Router::new()))
+        .merge(ControllerService::route(Router::new()))
         .merge(ControllerDataBase::route(Router::new()))
         .merge(ControllerCollection::route(Router::new()))
         .merge(ControllerDocument::route(Router::new()))

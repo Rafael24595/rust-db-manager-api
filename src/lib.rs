@@ -23,6 +23,7 @@ pub mod infrastructure {
         pub mod collection {
             pub mod dto_generate_collection_query;
             pub mod dto_collection_definition;
+            pub mod dto_rename_collection_query;
         }
         pub mod data_base {
             pub mod dto_generate_data_base_query;
@@ -75,6 +76,7 @@ pub mod infrastructure {
     pub mod controller_database;
     pub mod controller_document;
     pub mod controller_server;
+    pub mod controller_service;
     pub mod db_assets;
     pub mod handler;
     pub mod pagination;

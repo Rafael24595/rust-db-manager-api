@@ -18,8 +18,7 @@ use crate::commons::exception::api_exception::ApiException;
 
 use super::{
     dto::{
-        collection::dto_generate_collection_query::DTOGenerateCollectionQuery,
-        table::dto_table_data_group::DTOTableDataGroup,
+        collection::{dto_generate_collection_query::DTOGenerateCollectionQuery, dto_rename_collection_query::DTORenameCollectionQuery}, document::{dto_document_data::DTODocumentData, dto_document_schema::DTODocumentSchema}, table::dto_table_data_group::DTOTableDataGroup
     },
     handler, utils,
 };
@@ -31,38 +30,15 @@ impl ControllerCollection {
     
     pub fn route(router: Router) -> Router {
         router
-            .route("/:service/data-base/:data_base/metadata", get(Self::metadata))
-            .route("/:service/data-base/:data_base/collection", get(Self::find_all))
-            .route("/:service/data-base/:data_base/collection", post(Self::insert))
-            .route("/:service/data-base/:data_base/collection/:collection", delete(Self::delete))
+            .route("/api/v1/service/:service/data-base/:data_base/collection", get(Self::find_all))
+            .route("/api/v1/service/:service/data-base/:data_base/collection", post(Self::insert))
+            .route("/api/v1/service/:service/data-base/:data_base/collection/:collection", delete(Self::delete))
+            .route("/api/v1/service/:service/data-base/:data_base/collection/:collection/metadata", get(Self::metadata))
+            .route("/api/v1/service/:service/data-base/:data_base/collection/:collection/schema", get(Self::schema))
+            .route("/api/v1/service/:service/data-base/:data_base/collection/:collection/rename", post(Self::rename))
+            .route("/api/v1/service/:service/data-base/:data_base/collection/:collection/export", get(Self::export))
+            .route("/api/v1/service/:service/data-base/:data_base/collection/:collection/import", post(Self::import))
             .route_layer(middleware::from_fn(handler::autentication_handler))
-    }
-
-    async fn metadata(Path((service, data_base)): Path<(String, String)>) -> Result<Json<Vec<DTOTableDataGroup>>, impl IntoResponse> {
-        let o_db_service = Configuration::find_service(&service);
-        if o_db_service.is_none() {
-            return Err(utils::not_found());
-        }
-
-        let result = o_db_service.unwrap().instance().await;
-        if let Err(error) = result {
-            let exception = ApiException::from(StatusCode::INTERNAL_SERVER_ERROR.as_u16(), error);
-            return Err(exception.into_response());
-        }
-
-        let query = DataBaseQuery::from_data_base(data_base);
-
-        let metadata = result.unwrap().data_base_metadata(&query).await;
-        if let Err(error) = metadata {
-            let exception = ApiException::from(StatusCode::INTERNAL_SERVER_ERROR.as_u16(), error);
-            return Err(exception.into_response());
-        }
-    
-        let dto = metadata.unwrap().iter()
-            .map(|g| DTOTableDataGroup::from(g))
-            .collect();
-
-        Ok(Json(dto))
     }
 
     async fn find_all(Path((service, data_base)): Path<(String, String)>) -> Result<Json<Vec<String>>, impl IntoResponse> {
@@ -135,6 +111,128 @@ impl ControllerCollection {
         }
     
         Ok(StatusCode::ACCEPTED)
+    }
+
+    async fn metadata(Path((service, data_base, collection)): Path<(String, String, String)>) -> Result<Json<Vec<DTOTableDataGroup>>, impl IntoResponse> {
+        let o_db_service = Configuration::find_service(&service);
+        if o_db_service.is_none() {
+            return Err(utils::not_found());
+        }
+
+        let result = o_db_service.unwrap().instance().await;
+        if let Err(error) = result {
+            let exception = ApiException::from(StatusCode::INTERNAL_SERVER_ERROR.as_u16(), error);
+            return Err(exception.into_response());
+        }
+
+        let query = DataBaseQuery::from(data_base, collection);
+
+        let metadata = result.unwrap().collection_metadata(&query).await;
+        if let Err(error) = metadata {
+            let exception = ApiException::from(StatusCode::INTERNAL_SERVER_ERROR.as_u16(), error);
+            return Err(exception.into_response());
+        }
+    
+        let dto = metadata.unwrap().iter()
+            .map(|g| DTOTableDataGroup::from(g))
+            .collect();
+
+        Ok(Json(dto))
+    }
+
+    async fn schema(Path((service, data_base, collection)): Path<(String, String, String)>) -> Result<Json<DTODocumentSchema>, impl IntoResponse> {
+        let o_db_service = Configuration::find_service(&service);
+        if o_db_service.is_none() {
+            return Err(utils::not_found());
+        }
+        
+        let result = o_db_service.unwrap().instance().await;
+        if let Err(error) = result {
+            let exception = ApiException::from(StatusCode::INTERNAL_SERVER_ERROR.as_u16(), error);
+            return Err(exception.into_response());
+        }
+
+        let query = DataBaseQuery::from(data_base, collection);
+
+        let schema = result.unwrap().schema(&query).await;
+        if let Err(error) = schema {
+            let exception = ApiException::from(StatusCode::INTERNAL_SERVER_ERROR.as_u16(), error);
+            return Err(exception.into_response());
+        }
+    
+        Ok(Json(DTODocumentSchema::from(&schema.unwrap())))
+    }
+
+    async fn rename(Path((service, data_base, collection)): Path<(String, String, String)>, Json(dto): Json<DTORenameCollectionQuery>) -> Result<StatusCode, impl IntoResponse> {
+        let o_db_service = Configuration::find_service(&service);
+        if o_db_service.is_none() {
+            return Err(utils::not_found());
+        }
+        
+        let result = o_db_service.unwrap().instance().await;
+        if let Err(error) = result {
+            let exception = ApiException::from(StatusCode::INTERNAL_SERVER_ERROR.as_u16(), error);
+            return Err(exception.into_response());
+        }
+
+        let query = DataBaseQuery::from(data_base, collection);
+
+        let documents = result.unwrap().collection_rename(&query, &dto.collection).await;
+        if let Err(error) = documents {
+            let exception = ApiException::from(StatusCode::INTERNAL_SERVER_ERROR.as_u16(), error);
+            return Err(exception.into_response());
+        }
+    
+        Ok(StatusCode::OK)
+    }
+
+    async fn export(Path((service, data_base, collection)): Path<(String, String, String)>) -> Result<Json<Vec<DTODocumentData>>, impl IntoResponse> {
+        let o_db_service = Configuration::find_service(&service);
+        if o_db_service.is_none() {
+            return Err(utils::not_found());
+        }
+        
+        let result = o_db_service.unwrap().instance().await;
+        if let Err(error) = result {
+            let exception = ApiException::from(StatusCode::INTERNAL_SERVER_ERROR.as_u16(), error);
+            return Err(exception.into_response());
+        }
+
+        let query = DataBaseQuery::from(data_base, collection);
+
+        let documents = result.unwrap().collection_export(&query).await;
+        if let Err(error) = documents {
+            let exception = ApiException::from(StatusCode::INTERNAL_SERVER_ERROR.as_u16(), error);
+            return Err(exception.into_response());
+        }
+    
+        Ok(Json(documents.unwrap().iter()
+            .map(|d| DTODocumentData::from(d))
+            .collect())
+        )
+    }
+
+    async fn import(Path((service, data_base, collection)): Path<(String, String, String)>, documents: Json<Vec<String>>) -> Result<StatusCode, impl IntoResponse> {
+        let o_db_service = Configuration::find_service(&service);
+        if o_db_service.is_none() {
+            return Err(utils::not_found());
+        }
+        
+        let result = o_db_service.unwrap().instance().await;
+        if let Err(error) = result {
+            let exception = ApiException::from(StatusCode::INTERNAL_SERVER_ERROR.as_u16(), error);
+            return Err(exception.into_response());
+        }
+
+        let query = DataBaseQuery::from(data_base, collection);
+
+        let result = result.unwrap().collection_import(&query, documents.to_vec()).await;
+        if let Err(error) = result {
+            let exception = ApiException::from(StatusCode::INTERNAL_SERVER_ERROR.as_u16(), error);
+            return Err(exception.into_response());
+        }
+    
+        Ok(StatusCode::OK)
     }
 
 }

@@ -3,13 +3,13 @@ use rust_db_manager_core::infrastructure::repository::e_db_repository::EDBReposi
 use super::dto::service::definition::{dto_service_category_lite::DTOServiceCategoryLite, dto_service_resources::DTOServiceResources};
 
 pub trait WebEDBRepository {
-    fn supported() -> Vec<DTOServiceCategoryLite>;
+    fn availables() -> Vec<DTOServiceCategoryLite>;
     fn resources(&self) -> DTOServiceResources;
 }
 
 impl WebEDBRepository for EDBRepository {
 
-    fn supported() -> Vec<DTOServiceCategoryLite> {
+    fn availables() -> Vec<DTOServiceCategoryLite> {
         EDBRepository::items().iter()
             .map(|e| DTOServiceCategoryLite::from(e))
             .collect()
