@@ -111,7 +111,7 @@ impl ControllerDataBase {
             return Err(exception.into_response());
         }
 
-        let query = DataBaseQuery::from_data_base(data_base);
+        let query = DataBaseQuery::from(data_base);
 
         let metadata = result.unwrap().data_base_metadata(&query).await;
         if let Err(error) = metadata {

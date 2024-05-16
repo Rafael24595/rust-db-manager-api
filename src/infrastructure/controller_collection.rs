@@ -10,7 +10,7 @@ use rust_db_manager_core::{
     commons::configuration::configuration::Configuration,
     domain::{
         collection::generate_collection_query::GenerateCollectionQuery,
-        filter::data_base_query::DataBaseQuery,
+        filter::{collection_query::CollectionQuery, data_base_query::DataBaseQuery, document_query::DocumentQuery},
     },
 };
 
@@ -53,7 +53,7 @@ impl ControllerCollection {
             return Err(exception.into_response());
         }
 
-        let query = DataBaseQuery::from_data_base(data_base);
+        let query = DataBaseQuery::from(data_base);
 
         let collections = result.unwrap().collection_find_all(&query).await;
         if let Err(error) = collections {
@@ -125,7 +125,7 @@ impl ControllerCollection {
             return Err(exception.into_response());
         }
 
-        let query = DataBaseQuery::from(data_base, collection);
+        let query = CollectionQuery::from(data_base, collection);
 
         let metadata = result.unwrap().collection_metadata(&query).await;
         if let Err(error) = metadata {
@@ -152,7 +152,7 @@ impl ControllerCollection {
             return Err(exception.into_response());
         }
 
-        let query = DataBaseQuery::from(data_base, collection);
+        let query = CollectionQuery::from(data_base, collection);
 
         let schema = result.unwrap().schema(&query).await;
         if let Err(error) = schema {
@@ -175,7 +175,7 @@ impl ControllerCollection {
             return Err(exception.into_response());
         }
 
-        let query = DataBaseQuery::from(data_base, collection);
+        let query = CollectionQuery::from(data_base, collection);
 
         let documents = result.unwrap().collection_rename(&query, &dto.collection).await;
         if let Err(error) = documents {
@@ -198,7 +198,7 @@ impl ControllerCollection {
             return Err(exception.into_response());
         }
 
-        let query = DataBaseQuery::from(data_base, collection);
+        let query = CollectionQuery::from(data_base, collection);
 
         let documents = result.unwrap().collection_export(&query).await;
         if let Err(error) = documents {
@@ -224,7 +224,7 @@ impl ControllerCollection {
             return Err(exception.into_response());
         }
 
-        let query = DataBaseQuery::from(data_base, collection);
+        let query = CollectionQuery::from(data_base, collection);
 
         let result = result.unwrap().collection_import(&query, documents.to_vec()).await;
         if let Err(error) = result {

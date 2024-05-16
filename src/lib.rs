@@ -21,6 +21,7 @@ pub mod domain {
 pub mod infrastructure {
     pub mod dto {
         pub mod collection {
+            pub mod dto_collection_data;
             pub mod dto_generate_collection_query;
             pub mod dto_collection_definition;
             pub mod dto_rename_collection_query;

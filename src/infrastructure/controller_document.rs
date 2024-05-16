@@ -1,5 +1,5 @@
 use axum::{
-    extract::Path,
+    extract::{Path, Query},
     http::StatusCode,
     middleware,
     response::IntoResponse,
@@ -10,16 +10,14 @@ use rust_db_manager_core::{
     commons::{
         configuration::configuration::Configuration, utils::document_keys_to_filter_element,
     },
-    domain::filter::data_base_query::DataBaseQuery,
+    domain::filter::{collection_query::CollectionQuery, document_query::DocumentQuery},
 };
 
 use crate::commons::exception::api_exception::ApiException;
 
 use super::{
     dto::{
-        document::{dto_document_data::DTODocumentData, dto_document_key::DTODocumentKey},
-        dto_create_document::DTOCreateDocument,
-        dto_update_document::DTOUpdateDocument,
+        collection::dto_collection_data::DTOCollectionData, document::{dto_document_data::DTODocumentData, dto_document_key::DTODocumentKey}, dto_create_document::DTOCreateDocument, dto_update_document::DTOUpdateDocument, pagination::dto_query_pagination::DTOQueryPagination
     },
     handler, utils,
 };
@@ -61,7 +59,7 @@ impl ControllerDocument {
         }
 
         let filter = document_keys_to_filter_element(keys);
-        let query = DataBaseQuery::from_filter(data_base, collection, filter);
+        let query = DocumentQuery::from_filter(data_base, collection, filter);
 
         let r_document = result.unwrap().find(&query).await;
         if let Err(error) = r_document {
@@ -79,7 +77,7 @@ impl ControllerDocument {
         Ok(Json(DTODocumentData::from(&document.unwrap())))
     }
 
-    async fn find_all(Path((service, data_base, collection)): Path<(String, String, String)>) -> Result<Json<Vec<DTODocumentData>>, impl IntoResponse> {
+    async fn find_all(Path((service, data_base, collection)): Path<(String, String, String)>, Query(params): Query<DTOQueryPagination>) -> Result<Json<DTOCollectionData>, impl IntoResponse> {
         let o_db_service = Configuration::find_service(&service);
         if o_db_service.is_none() {
             return Err(utils::not_found());
@@ -91,18 +89,15 @@ impl ControllerDocument {
             return Err(exception.into_response());
         }
 
-        let query = DataBaseQuery::from(data_base, collection);
+        let query = DocumentQuery::from(data_base, collection, Some(params.limit), Some(params.offset), None);
 
-        let documents = result.unwrap().find_all(&query).await;
-        if let Err(error) = documents {
+        let data = result.unwrap().find_all(&query).await;
+        if let Err(error) = data {
             let exception = ApiException::from(StatusCode::INTERNAL_SERVER_ERROR.as_u16(), error);
             return Err(exception.into_response());
         }
     
-        Ok(Json(documents.unwrap().iter()
-            .map(|d| DTODocumentData::from(d))
-            .collect())
-        )
+        Ok(Json(DTOCollectionData::from(&data.unwrap())))
     }
 
     async fn insert(Path((service, data_base, collection)): Path<(String, String, String)>, Json(dto): Json<DTOCreateDocument>) -> Result<Json<DTODocumentData>, impl IntoResponse> {
@@ -117,7 +112,7 @@ impl ControllerDocument {
             return Err(exception.into_response());
         }
 
-        let query = DataBaseQuery::from(data_base, collection);
+        let query = CollectionQuery::from(data_base, collection);
 
         let document = result.unwrap().insert(&query, &dto.document).await;
         if let Err(error) = document {
@@ -150,7 +145,7 @@ impl ControllerDocument {
         }
 
         let filter = document_keys_to_filter_element(keys);
-        let query = DataBaseQuery::from_filter(data_base, collection, filter);
+        let query = DocumentQuery::from_filter(data_base, collection, filter);
 
         let documents = result.unwrap().update(&query, &dto.document).await;
         if let Err(error) = documents {
@@ -186,7 +181,7 @@ impl ControllerDocument {
         }
 
         let filter = document_keys_to_filter_element(keys);
-        let query = DataBaseQuery::from_filter(data_base, collection, filter);
+        let query = DocumentQuery::from_filter(data_base, collection, filter);
 
         let documents = result.unwrap().delete(&query).await;
         if let Err(error) = documents {
