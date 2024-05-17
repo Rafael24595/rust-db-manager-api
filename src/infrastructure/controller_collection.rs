@@ -1,5 +1,5 @@
 use axum::{
-    extract::Path,
+    extract::{DefaultBodyLimit, Path},
     http::StatusCode,
     middleware,
     response::IntoResponse,
@@ -10,7 +10,7 @@ use rust_db_manager_core::{
     commons::configuration::configuration::Configuration,
     domain::{
         collection::generate_collection_query::GenerateCollectionQuery,
-        filter::{collection_query::CollectionQuery, data_base_query::DataBaseQuery, document_query::DocumentQuery},
+        filter::{collection_query::CollectionQuery, data_base_query::DataBaseQuery},
     },
 };
 
@@ -30,6 +30,8 @@ impl ControllerCollection {
     
     pub fn route(router: Router) -> Router {
         router
+            .route("/api/v1/service/:service/data-base/:data_base/collection/:collection/import", post(Self::import))
+            .layer(DefaultBodyLimit::max(52428800 ))
             .route("/api/v1/service/:service/data-base/:data_base/collection", get(Self::find_all))
             .route("/api/v1/service/:service/data-base/:data_base/collection", post(Self::insert))
             .route("/api/v1/service/:service/data-base/:data_base/collection/:collection", delete(Self::delete))
@@ -37,7 +39,6 @@ impl ControllerCollection {
             .route("/api/v1/service/:service/data-base/:data_base/collection/:collection/schema", get(Self::schema))
             .route("/api/v1/service/:service/data-base/:data_base/collection/:collection/rename", post(Self::rename))
             .route("/api/v1/service/:service/data-base/:data_base/collection/:collection/export", get(Self::export))
-            .route("/api/v1/service/:service/data-base/:data_base/collection/:collection/import", post(Self::import))
             .route_layer(middleware::from_fn(handler::autentication_handler))
     }
 
