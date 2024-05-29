@@ -41,6 +41,11 @@ pub mod infrastructure {
                 pub mod dto_field_attribute_definition;
                 pub mod dto_field_definition;
             }
+            pub mod filter {
+                pub mod dto_filter_element;
+                pub mod dto_filter_value;
+                pub mod dto_filter_value_attribute;
+            }
             pub mod generate {
                 pub mod dto_field_atribute;
                 pub mod dto_field_data;
