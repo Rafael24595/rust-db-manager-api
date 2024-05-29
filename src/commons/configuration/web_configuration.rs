@@ -17,6 +17,8 @@ pub struct WebConfiguration {
 }
 
 impl WebConfiguration {
+
+    pub const COOKIE_NAME: &'static str = "DB_TOKEN";
     
     pub fn initialize() -> WebConfiguration {
         let _ = Configuration::initialize();

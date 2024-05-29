@@ -3,8 +3,6 @@ use std::error::Error;
 
 use rust_db_manager_core::commons::exception::connect_exception::ConnectException;
 
-pub(crate) const EXCEPTION_HEADER: &str = "Error-Code";
-
 #[derive(Debug, Clone)]
 pub struct ApiException {
     status: u16,
