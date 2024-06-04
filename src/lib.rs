@@ -43,6 +43,7 @@ pub mod infrastructure {
             }
             pub mod filter {
                 pub mod dto_filter_element;
+                pub mod dto_filter_resources;
                 pub mod dto_filter_value;
                 pub mod dto_filter_value_attribute;
             }
