@@ -101,7 +101,7 @@ impl ControllerDocument {
         Ok(Json(DTODocumentData::from(&document.unwrap())))
     }
 
-    async fn query(Path((service, data_base, collection)): Path<(String, String, String)>, Json(dto): Json<DTOFilterElement>) -> Result<Json<DTODocumentData>, impl IntoResponse> {
+    async fn query(Path((service, data_base, collection)): Path<(String, String, String)>, Query(params): Query<DTOQueryPagination>, Json(dto): Json<DTOFilterElement>) -> Result<Json<DTOCollectionData>, impl IntoResponse> {
         let o_db_service = Configuration::find_service(&service);
         if o_db_service.is_none() {
             return Err(utils::not_found());
@@ -118,22 +118,15 @@ impl ControllerDocument {
             return Err(exception.into_response());
         }
 
-        let query = DocumentQuery::from_filter(data_base, collection, filter.unwrap());
+        let query = DocumentQuery::from(data_base, collection, Some(params.limit), Some(params.offset), Some(filter.unwrap()));
 
-        let r_document = result.unwrap().find(&query).await;
-        if let Err(error) = r_document {
+        let data = result.unwrap().find_query(&query).await;
+        if let Err(error) = data {
             let exception = ApiException::from(StatusCode::INTERNAL_SERVER_ERROR.as_u16(), error);
             return Err(exception.into_response());
         }
-
-        let document = r_document.unwrap();
-
-        if let None = document {
-            let exception = ApiException::new(StatusCode::NOT_FOUND.as_u16(), String::from("Document not found."));
-            return Err(exception.into_response());
-        }
     
-        Ok(Json(DTODocumentData::from(&document.unwrap())))
+        Ok(Json(DTOCollectionData::from(&data.unwrap())))
     }
 
 

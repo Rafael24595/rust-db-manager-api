@@ -37,7 +37,8 @@ impl ControllerServer {
 
     async fn resources_filter() -> (StatusCode, Json<DTOFilterResources>) {
         let dto = DTOFilterResources::new(
-            EFilterCategory::root_category().to_string(), 
+            EFilterCategory::root_category().to_string(),
+            EFilterCategory::query_category().to_string(), 
             EFilterCategory::items().iter().map(|c| c.to_string()).collect()
         );
         (StatusCode::OK, Json(dto))
