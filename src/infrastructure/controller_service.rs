@@ -19,19 +19,20 @@ use crate::{
 
 use super::{
     dto::{
-        collection::dto_collection_definition::DTOCollectionDefinition, pagination::{
+        collection::dto_collection_definition::DTOCollectionDefinition,
+        field::filter::definition::dto_filter_definition::DTOFilterDefinition,
+        pagination::{
             dto_paginated_collection::DTOPaginatedCollection,
             dto_query_pagination::DTOQueryPagination,
-        }, service::{
-            definition::{
-                dto_service::DTOService,
-                dto_service_lite::DTOServiceLite,
-            },
+        },
+        service::{
+            definition::{dto_service::DTOService, dto_service_lite::DTOServiceLite},
             generate::{
                 dto_service_create_request::DTOServiceRequest,
                 dto_service_suscribe_request::DTOServiceSuscribeRequest,
             },
-        }, table::dto_table_data_group::DTOTableDataGroup
+        },
+        table::dto_table_data_group::DTOTableDataGroup,
     },
     handler,
     pagination::Pagination,
@@ -51,6 +52,7 @@ impl ControllerService {
             .route("/api/v1/service/:service/status", get(Self::status))
             .route("/api/v1/service/:service/metadata", get(Self::metadata))
             .route("/api/v1/service/:service/schema", get(Self::schema))
+            .route("/api/v1/service/:service/schema-filter", get(Self::schema_filter))
             .route_layer(middleware::from_fn(handler::autentication_handler))
 
             .route("/api/v1/service", get(Self::find_all))
@@ -150,6 +152,27 @@ impl ControllerService {
         }
         
         Ok(Json(DTOCollectionDefinition::from(definition.unwrap())))
+    }
+
+    async fn schema_filter(Path(service): Path<String>) -> Result<Json<DTOFilterDefinition>, impl IntoResponse> {
+        let o_db_service = Configuration::find_service(&service);
+        if o_db_service.is_none() {
+            return Err(utils::not_found());
+        }
+        
+        let result = o_db_service.unwrap().instance().await;
+        if let Err(error) = result {
+            let exception = ApiException::from(StatusCode::INTERNAL_SERVER_ERROR.as_u16(), error);
+            return Err(exception.into_response());
+        }
+
+        let schema = result.unwrap().filter_schema().await;
+        if let Err(error) = schema {
+            let exception = ApiException::from(StatusCode::INTERNAL_SERVER_ERROR.as_u16(), error);
+            return Err(exception.into_response());
+        }
+    
+        Ok(Json(DTOFilterDefinition::from(&schema.unwrap())))
     }
 
     async fn find_all(Query(params): Query<DTOQueryPagination>) -> (StatusCode, Json<DTOPaginatedCollection<DTOServiceLite>>) {
