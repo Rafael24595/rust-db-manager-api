@@ -32,7 +32,7 @@ use super::{
                 dto_service_suscribe_request::DTOServiceSuscribeRequest,
             },
         },
-        table::dto_table_data_group::DTOTableDataGroup,
+        table::group::dto_table_data_group::DTOTableDataGroup,
     },
     handler,
     pagination::Pagination,

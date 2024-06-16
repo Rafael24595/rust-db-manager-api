@@ -8,13 +8,19 @@ use axum::{
 };
 use rust_db_manager_core::{
     commons::configuration::configuration::Configuration,
-    domain::{data_base::generate_database_query::GenerateDatabaseQuery, filter::data_base_query::DataBaseQuery},
+    domain::{
+        data_base::generate_database_query::GenerateDatabaseQuery,
+        filter::data_base_query::DataBaseQuery,
+    },
 };
 
 use crate::commons::exception::api_exception::ApiException;
 
 use super::{
-    dto::{data_base::dto_generate_data_base_query::DTOGenerateDatabaseQuery, table::dto_table_data_group::DTOTableDataGroup},
+    dto::{
+        data_base::dto_generate_data_base_query::DTOGenerateDatabaseQuery,
+        table::group::dto_table_data_group::DTOTableDataGroup,
+    },
     handler, utils,
 };
 

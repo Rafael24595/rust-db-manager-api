@@ -20,6 +20,15 @@ pub mod domain {
 }
 pub mod infrastructure {
     pub mod dto {
+        pub mod action {
+            pub mod definition {
+                pub mod dto_action_definition;
+                pub mod dto_action_form;
+                pub mod dto_action_form_collection;
+                pub mod dto_form_default;
+                pub mod dto_form_field_definition;
+            }
+        }
         pub mod collection {
             pub mod dto_collection_data;
             pub mod dto_generate_collection_query;
@@ -77,8 +86,15 @@ pub mod infrastructure {
             }
         }
         pub mod table {
-            pub mod dto_table_data_field;
-            pub mod dto_table_data_group;
+            pub mod definition {
+                pub mod dto_table_definition;
+                pub mod dto_table_field_definition;
+                pub mod dto_table_row_definition;
+            }
+            pub mod group {
+                pub mod dto_table_data_field;
+                pub mod dto_table_data_group;
+            }
         }
         pub mod dto_create_document;
         pub mod dto_server_status;
