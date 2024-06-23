@@ -28,6 +28,11 @@ pub mod infrastructure {
                 pub mod dto_form_default;
                 pub mod dto_form_field_definition;
             }
+            pub mod generate {
+                pub mod dto_action_form;
+                pub mod dto_action;
+                pub mod dto_form_field;
+            }
         }
         pub mod collection {
             pub mod dto_collection_data;

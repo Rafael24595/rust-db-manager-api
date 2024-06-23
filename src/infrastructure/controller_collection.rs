@@ -18,7 +18,7 @@ use crate::commons::exception::api_exception::ApiException;
 
 use super::{
     dto::{
-        action::definition::dto_action_definition::DTOActionDefinition,
+        action::{definition::dto_action_definition::DTOActionDefinition, generate::dto_action::DTOAction},
         collection::{
             dto_generate_collection_query::DTOGenerateCollectionQuery,
             dto_rename_collection_query::DTORenameCollectionQuery,
@@ -46,7 +46,8 @@ impl ControllerCollection {
             .route("/api/v1/service/:service/data-base/:data_base/collection/:collection", delete(Self::delete))
             .route("/api/v1/service/:service/data-base/:data_base/collection/:collection/metadata", get(Self::metadata))
             .route("/api/v1/service/:service/data-base/:data_base/collection/:collection/information", get(Self::information))
-            .route("/api/v1/service/:service/data-base/:data_base/collection/:collection/actions", get(Self::actions))
+            .route("/api/v1/service/:service/data-base/:data_base/collection/:collection/action", get(Self::action))
+            .route("/api/v1/service/:service/data-base/:data_base/collection/:collection/action", post(Self::execute))
             .route("/api/v1/service/:service/data-base/:data_base/collection/:collection/schema", get(Self::schema))
             .route("/api/v1/service/:service/data-base/:data_base/collection/:collection/rename", post(Self::rename))
             .route("/api/v1/service/:service/data-base/:data_base/collection/:collection/export", get(Self::export))
@@ -179,7 +180,7 @@ impl ControllerCollection {
         Ok(Json(dto))
     }
 
-    async fn actions(Path((service, data_base, collection)): Path<(String, String, String)>) -> Result<Json<Vec<DTOActionDefinition>>, impl IntoResponse> {
+    async fn action(Path((service, data_base, collection)): Path<(String, String, String)>) -> Result<Json<Vec<DTOActionDefinition>>, impl IntoResponse> {
         let o_db_service = Configuration::find_service(&service);
         if o_db_service.is_none() {
             return Err(utils::not_found());
@@ -204,6 +205,29 @@ impl ControllerCollection {
             .collect();
 
         Ok(Json(dto))
+    }
+
+    async fn execute(Path((service, data_base, collection)): Path<(String, String, String)>, Json(dto): Json<DTOAction>) -> Result<StatusCode, impl IntoResponse> {
+        let o_db_service = Configuration::find_service(&service);
+        if o_db_service.is_none() {
+            return Err(utils::not_found());
+        }
+        
+        let result = o_db_service.unwrap().instance().await;
+        if let Err(error) = result {
+            let exception = ApiException::from(StatusCode::INTERNAL_SERVER_ERROR.as_u16(), error);
+            return Err(exception.into_response());
+        }
+
+        let query = CollectionQuery::from(data_base, collection);
+
+        let documents = result.unwrap().collection_execute_action(&query, &dto.from_dto()).await;
+        if let Err(error) = documents {
+            let exception = ApiException::from(StatusCode::INTERNAL_SERVER_ERROR.as_u16(), error);
+            return Err(exception.into_response());
+        }
+    
+        Ok(StatusCode::OK)
     }
 
     async fn schema(Path((service, data_base, collection)): Path<(String, String, String)>) -> Result<Json<DTODocumentSchema>, impl IntoResponse> {
