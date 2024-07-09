@@ -29,7 +29,7 @@ use super::{
             group::dto_table_data_group::DTOTableDataGroup,
         },
     },
-    handler, utils,
+    handler, utils::{self, not_found},
 };
 
 pub struct ControllerCollection {
@@ -47,6 +47,7 @@ impl ControllerCollection {
             .route("/api/v1/service/:service/data-base/:data_base/collection/:collection/metadata", get(Self::metadata))
             .route("/api/v1/service/:service/data-base/:data_base/collection/:collection/information", get(Self::information))
             .route("/api/v1/service/:service/data-base/:data_base/collection/:collection/action", get(Self::action))
+            .route("/api/v1/service/:service/data-base/:data_base/collection/:collection/action/:code", get(Self::find_action))
             .route("/api/v1/service/:service/data-base/:data_base/collection/:collection/action", post(Self::execute))
             .route("/api/v1/service/:service/data-base/:data_base/collection/:collection/schema", get(Self::schema))
             .route("/api/v1/service/:service/data-base/:data_base/collection/:collection/rename", post(Self::rename))
@@ -205,6 +206,35 @@ impl ControllerCollection {
             .collect();
 
         Ok(Json(dto))
+    }
+
+    async fn find_action(Path((service, data_base, collection, code)): Path<(String, String, String, String)>) -> Result<Json<DTOActionDefinition>, impl IntoResponse> {
+        let o_db_service = Configuration::find_service(&service);
+        if o_db_service.is_none() {
+            return Err(utils::not_found());
+        }
+
+        let result = o_db_service.unwrap().instance().await;
+        if let Err(error) = result {
+            let exception = ApiException::from(StatusCode::INTERNAL_SERVER_ERROR.as_u16(), error);
+            return Err(exception.into_response());
+        }
+
+        let query = CollectionQuery::from(data_base, collection);
+
+        let r_action = result.unwrap().collection_action(&query, &code).await;
+        if let Err(error) = r_action {
+            let exception = ApiException::from(StatusCode::INTERNAL_SERVER_ERROR.as_u16(), error);
+            return Err(exception.into_response());
+        }
+
+        let action = r_action.unwrap();
+    
+        if action.is_none() {
+            return Err(not_found());
+        }
+
+        Ok(Json(DTOActionDefinition::from(&action.unwrap())))
     }
 
     async fn execute(Path((service, data_base, collection)): Path<(String, String, String)>, Json(dto): Json<DTOAction>) -> Result<StatusCode, impl IntoResponse> {

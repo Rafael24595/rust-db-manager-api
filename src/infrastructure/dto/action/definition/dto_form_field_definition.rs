@@ -8,7 +8,7 @@ pub struct DTOFormFieldDefinition {
     order: usize,
     code: String,
     name: String,
-    sw_vector: bool,
+    sw_key: bool,
     values: Vec<DTOFormDefault>,
 }
 
@@ -19,7 +19,7 @@ impl DTOFormFieldDefinition {
             order: field.order(),
             code: field.code(),
             name: field.name(),
-            sw_vector: field.is_vector(),
+            sw_key: field.is_key(),
             values: field.values().iter()
                 .map(|d| DTOFormDefault::from(d))
                 .collect()
