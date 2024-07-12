@@ -4,7 +4,7 @@ use serde::Deserialize;
 #[derive(Clone, Deserialize)]
 pub struct DTOFormField {
     code: String,
-    value: Vec<String>,
+    value: String,
 }
 
 impl DTOFormField {
