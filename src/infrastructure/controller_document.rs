@@ -17,7 +17,12 @@ use crate::commons::exception::api_exception::ApiException;
 
 use super::{
     dto::{
-        collection::dto_collection_data::DTOCollectionData, document::{dto_document_data::DTODocumentData, dto_document_key::DTODocumentKey}, dto_create_document::DTOCreateDocument, dto_update_document::DTOUpdateDocument, field::filter::dto_filter_element::DTOFilterElement, pagination::dto_query_pagination::DTOQueryPagination
+        collection::dto_collection_data::DTOCollectionData,
+        document::{dto_document_data::DTODocumentData, dto_document_key::DTODocumentKey},
+        dto_create_document::DTOCreateDocument,
+        dto_update_document::DTOUpdateDocument,
+        field::filter::dto_filter_element::DTOFilterElement,
+        pagination::dto_query_pagination::DTOQueryPagination,
     },
     handler, utils,
 };
@@ -39,7 +44,13 @@ impl ControllerDocument {
     }
 
     async fn find_all(Path((service, data_base, collection)): Path<(String, String, String)>, Query(params): Query<DTOQueryPagination>) -> Result<Json<DTOCollectionData>, impl IntoResponse> {
-        let o_db_service = Configuration::find_service(&service);
+        let r_db_service = Configuration::find_service(&service);
+        if let Err(error) = r_db_service {
+            let exception = ApiException::from_configuration_exception(StatusCode::INTERNAL_SERVER_ERROR.as_u16(), error);
+            return Err(exception.into_response());
+        }
+
+        let o_db_service = r_db_service.unwrap();
         if o_db_service.is_none() {
             return Err(utils::not_found());
         }
@@ -62,7 +73,13 @@ impl ControllerDocument {
     }
 
     async fn find(Path((service, data_base, collection)): Path<(String, String, String)>, Json(dto): Json<Vec<DTODocumentKey>>) -> Result<Json<DTODocumentData>, impl IntoResponse> {
-        let o_db_service = Configuration::find_service(&service);
+        let r_db_service = Configuration::find_service(&service);
+        if let Err(error) = r_db_service {
+            let exception = ApiException::from_configuration_exception(StatusCode::INTERNAL_SERVER_ERROR.as_u16(), error);
+            return Err(exception.into_response());
+        }
+
+        let o_db_service = r_db_service.unwrap();
         if o_db_service.is_none() {
             return Err(utils::not_found());
         }
@@ -102,7 +119,13 @@ impl ControllerDocument {
     }
 
     async fn query(Path((service, data_base, collection)): Path<(String, String, String)>, Query(params): Query<DTOQueryPagination>, Json(dto): Json<DTOFilterElement>) -> Result<Json<DTOCollectionData>, impl IntoResponse> {
-        let o_db_service = Configuration::find_service(&service);
+        let r_db_service = Configuration::find_service(&service);
+        if let Err(error) = r_db_service {
+            let exception = ApiException::from_configuration_exception(StatusCode::INTERNAL_SERVER_ERROR.as_u16(), error);
+            return Err(exception.into_response());
+        }
+
+        let o_db_service = r_db_service.unwrap();
         if o_db_service.is_none() {
             return Err(utils::not_found());
         }
@@ -131,7 +154,13 @@ impl ControllerDocument {
 
 
     async fn insert(Path((service, data_base, collection)): Path<(String, String, String)>, Json(dto): Json<DTOCreateDocument>) -> Result<Json<DTODocumentData>, impl IntoResponse> {
-        let o_db_service = Configuration::find_service(&service);
+        let r_db_service = Configuration::find_service(&service);
+        if let Err(error) = r_db_service {
+            let exception = ApiException::from_configuration_exception(StatusCode::INTERNAL_SERVER_ERROR.as_u16(), error);
+            return Err(exception.into_response());
+        }
+
+        let o_db_service = r_db_service.unwrap();
         if o_db_service.is_none() {
             return Err(utils::not_found());
         }
@@ -154,7 +183,13 @@ impl ControllerDocument {
     }
 
     async fn update(Path((service, data_base, collection)): Path<(String, String, String)>, Json(dto): Json<DTOUpdateDocument>) -> Result<Json<Vec<DTODocumentData>>, impl IntoResponse> {
-        let o_db_service = Configuration::find_service(&service);
+        let r_db_service = Configuration::find_service(&service);
+        if let Err(error) = r_db_service {
+            let exception = ApiException::from_configuration_exception(StatusCode::INTERNAL_SERVER_ERROR.as_u16(), error);
+            return Err(exception.into_response());
+        }
+
+        let o_db_service = r_db_service.unwrap();
         if o_db_service.is_none() {
             return Err(utils::not_found());
         }
@@ -190,7 +225,13 @@ impl ControllerDocument {
     }
 
     async fn delete(Path((service, data_base, collection)): Path<(String, String, String)>, Json(dto): Json<Vec<DTODocumentKey>>) -> Result<Json<Vec<DTODocumentData>>, impl IntoResponse> {
-        let o_db_service = Configuration::find_service(&service);
+        let r_db_service = Configuration::find_service(&service);
+        if let Err(error) = r_db_service {
+            let exception = ApiException::from_configuration_exception(StatusCode::INTERNAL_SERVER_ERROR.as_u16(), error);
+            return Err(exception.into_response());
+        }
+
+        let o_db_service = r_db_service.unwrap();
         if o_db_service.is_none() {
             return Err(utils::not_found());
         }

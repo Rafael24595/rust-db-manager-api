@@ -1,12 +1,10 @@
 use axum::{
-    http::StatusCode,
-    routing::get,
-    Json, Router,
+    http::StatusCode, response::IntoResponse, routing::get, Json, Router
 };
 
 use rust_db_manager_core::{domain::filter::e_filter_category::EFilterCategory, infrastructure::repository::e_db_repository::EDBRepository};
 
-use crate::commons::configuration::web_configuration::WebConfiguration;
+use crate::commons::{configuration::web_configuration::WebConfiguration, exception::api_exception::ApiException};
 
 use super::{
     db_assets::WebEDBRepository,
@@ -25,9 +23,13 @@ impl ControllerServer {
             .route("/api/v1/resources/filter", get(Self::resources_filter))
     }
 
-    async fn metadata() -> (StatusCode, Json<DTOServerStatus>) {
+    async fn metadata() -> Result<Json<DTOServerStatus>, impl IntoResponse> {
         let result = WebConfiguration::as_dto();
-        (StatusCode::OK, Json(result))
+        if let Err(error) = result {
+            let exception = ApiException::from_configuration_exception(StatusCode::INTERNAL_SERVER_ERROR.as_u16(), error);
+            return Err(exception.into_response());
+        }
+        Ok(Json(result.unwrap()))
     }
 
     async fn available() -> (StatusCode, Json<Vec<DTOServiceCategoryLite>>) {

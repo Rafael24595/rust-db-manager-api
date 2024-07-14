@@ -2,7 +2,7 @@ use std::sync::Mutex;
 
 use cargo_metadata::{CargoOpt, MetadataCommand};
 use lazy_static::lazy_static;
-use rust_db_manager_core::commons::configuration::configuration::Configuration;
+use rust_db_manager_core::commons::{configuration::configuration::Configuration, exception::configuration_exception::ConfigurationException};
 
 use crate::infrastructure::dto::dto_server_status::DTOServerStatus;
 
@@ -68,19 +68,19 @@ impl WebConfiguration {
         WebConfiguration::instance().web_app_version
     }
 
-    pub fn as_dto() -> DTOServerStatus {
+    pub fn as_dto() -> Result<DTOServerStatus, ConfigurationException> {
         let web = WebConfiguration::instance();
-        DTOServerStatus {
-            rustc_version: Configuration::rustc_version(),
-            cargo_version: Configuration::cargo_version(),
-            core_name: Configuration::name(),
-            core_version: Configuration::version(),
+        Ok(DTOServerStatus {
+            rustc_version: Configuration::rustc_version()?,
+            cargo_version: Configuration::cargo_version()?,
+            core_name: Configuration::name()?,
+            core_version: Configuration::version()?,
             web_name: web.web_app_name,
             web_version: web.web_app_version,
-            session_id: Configuration::session_id(),
-            timestamp: Configuration::timestamp(),
-            services: Configuration::find_services().len()
-        }
+            session_id: Configuration::session_id()?,
+            timestamp: Configuration::timestamp()?,
+            services: Configuration::find_services()?.len()
+        })
     }
 
 }

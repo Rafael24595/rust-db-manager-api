@@ -1,6 +1,8 @@
 use std::fmt;
 use std::error::Error;
 
+use rust_db_manager_core::commons::exception::configuration_exception::ConfigurationException;
+
 use super::api_exception::ApiException;
 
 #[derive(Debug, Clone)]
@@ -22,6 +24,14 @@ impl Error for AuthException {}
 impl AuthException {
     
     pub fn from(status: u16, exception: ApiException, reset: bool) -> AuthException {
+        AuthException {
+            status: status,
+            message: exception.message(),
+            reset: reset
+        }
+    }
+
+    pub fn from_configuration_exception(status: u16, exception: ConfigurationException, reset: bool) -> AuthException {
         AuthException {
             status: status,
             message: exception.message(),

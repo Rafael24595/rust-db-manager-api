@@ -61,7 +61,13 @@ impl ControllerService {
     }
 
     async fn find(Path(service): Path<String>) -> Result<Json<DTOService>,impl IntoResponse> {
-        let o_db_service = Configuration::find_service(&service);
+        let r_db_service = Configuration::find_service(&service);
+        if let Err(error) = r_db_service {
+            let exception = ApiException::from_configuration_exception(StatusCode::INTERNAL_SERVER_ERROR.as_u16(), error);
+            return Err(exception.into_response());
+        }
+
+        let o_db_service = r_db_service.unwrap();
         if o_db_service.is_none() {
             return Err(utils::not_found());
         }
@@ -70,7 +76,13 @@ impl ControllerService {
     } 
 
     async fn delete(headers: HeaderMap, Path(service): Path<String>) -> impl IntoResponse {
-        let o_db_service = Configuration::find_service(&service);
+        let r_db_service = Configuration::find_service(&service);
+        if let Err(error) = r_db_service {
+            let exception = ApiException::from_configuration_exception(StatusCode::INTERNAL_SERVER_ERROR.as_u16(), error);
+            return Err(exception.into_response());
+        }
+
+        let o_db_service = r_db_service.unwrap();
         if o_db_service.is_none() {
             return Err(utils::not_found());
         }
@@ -88,7 +100,13 @@ impl ControllerService {
     }
 
     async fn status(Path(service): Path<String>) -> Result<(StatusCode, String), impl IntoResponse> {
-        let o_db_service = Configuration::find_service(&service);
+        let r_db_service = Configuration::find_service(&service);
+        if let Err(error) = r_db_service {
+            let exception = ApiException::from_configuration_exception(StatusCode::INTERNAL_SERVER_ERROR.as_u16(), error);
+            return Err(exception.into_response());
+        }
+
+        let o_db_service = r_db_service.unwrap();
         if o_db_service.is_none() {
             return Err(utils::not_found());
         }
@@ -109,7 +127,13 @@ impl ControllerService {
     }
 
     async fn metadata(Path(service): Path<String>) -> Result<Json<Vec<DTOTableDataGroup>>, impl IntoResponse> {
-        let o_db_service = Configuration::find_service(&service);
+        let r_db_service = Configuration::find_service(&service);
+        if let Err(error) = r_db_service {
+            let exception = ApiException::from_configuration_exception(StatusCode::INTERNAL_SERVER_ERROR.as_u16(), error);
+            return Err(exception.into_response());
+        }
+
+        let o_db_service = r_db_service.unwrap();
         if o_db_service.is_none() {
             return Err(utils::not_found());
         }
@@ -134,7 +158,13 @@ impl ControllerService {
     }
 
     async fn schema(Path(service): Path<String>) -> Result<Json<DTOCollectionDefinition>, impl IntoResponse> {
-        let o_db_service = Configuration::find_service(&service);
+        let r_db_service = Configuration::find_service(&service);
+        if let Err(error) = r_db_service {
+            let exception = ApiException::from_configuration_exception(StatusCode::INTERNAL_SERVER_ERROR.as_u16(), error);
+            return Err(exception.into_response());
+        }
+
+        let o_db_service = r_db_service.unwrap();
         if o_db_service.is_none() {
             return Err(utils::not_found());
         }
@@ -155,7 +185,13 @@ impl ControllerService {
     }
 
     async fn schema_filter(Path(service): Path<String>) -> Result<Json<DTOFilterDefinition>, impl IntoResponse> {
-        let o_db_service = Configuration::find_service(&service);
+        let r_db_service = Configuration::find_service(&service);
+        if let Err(error) = r_db_service {
+            let exception = ApiException::from_configuration_exception(StatusCode::INTERNAL_SERVER_ERROR.as_u16(), error);
+            return Err(exception.into_response());
+        }
+
+        let o_db_service = r_db_service.unwrap();
         if o_db_service.is_none() {
             return Err(utils::not_found());
         }
@@ -175,11 +211,15 @@ impl ControllerService {
         Ok(Json(DTOFilterDefinition::from(&schema.unwrap())))
     }
 
-    async fn find_all(Query(params): Query<DTOQueryPagination>) -> (StatusCode, Json<DTOPaginatedCollection<DTOServiceLite>>) {
+    async fn find_all(Query(params): Query<DTOQueryPagination>) -> Result<Json<DTOPaginatedCollection<DTOServiceLite>>, impl IntoResponse> {
         let services = Configuration::find_services();
-        let dto = services.iter().map(|s| DTOServiceLite::from(s)).collect();
+        if let Err(error) = services {
+            let exception = ApiException::from_configuration_exception(StatusCode::INTERNAL_SERVER_ERROR.as_u16(), error);
+            return Err(exception.into_response());
+        }
+        let dto = services.unwrap().iter().map(|s| DTOServiceLite::from(s)).collect();
         let result = Pagination::paginate(params, dto);
-        (StatusCode::ACCEPTED, Json(result))
+        Ok(Json(result))
     }
 
     async fn insert(headers: HeaderMap, Json(dto): Json<DTOServiceRequest>) -> impl IntoResponse {
@@ -196,8 +236,8 @@ impl ControllerService {
         }
 
         let db_service = Configuration::push_service(service);
-        if let Err(exception) = db_service {
-            let exception = ApiException::from(StatusCode::INTERNAL_SERVER_ERROR.as_u16(), exception);
+        if let Err(error) = db_service {
+            let exception = ApiException::from_configuration_exception(StatusCode::INTERNAL_SERVER_ERROR.as_u16(), error);
             return Err(exception.into_response());
         }
 
@@ -205,14 +245,19 @@ impl ControllerService {
     }
 
     async fn suscribe(headers: HeaderMap, Json(dto): Json<DTOServiceSuscribeRequest>) -> impl IntoResponse {
-        let o_db_service = Configuration::find_service(&dto.name);
+        let r_db_service = Configuration::find_service(&dto.name);
+        if let Err(error) = r_db_service {
+            let exception = ApiException::from_configuration_exception(StatusCode::INTERNAL_SERVER_ERROR.as_u16(), error);
+            return Err(exception.into_response());
+        }
+
+        let o_db_service = r_db_service.unwrap();
         if o_db_service.is_none() {
             let exception = ApiException::new(StatusCode::NOT_FOUND.as_u16(), String::from("Service not found."));
             return Err(exception.into_response());
         }
         
         let db_service = &o_db_service.unwrap();
-
         if db_service.is_authorized(dto.password).is_err() {
             let exception = ApiException::new(StatusCode::UNAUTHORIZED.as_u16(), String::from("Authentication error."));
             return Err(exception.into_response());

@@ -39,7 +39,13 @@ impl ControllerDataBase {
     }
 
     async fn find_all(Path(service): Path<String>) -> Result<Json<Vec<String>>, impl IntoResponse> {
-        let o_db_service = Configuration::find_service(&service);
+        let r_db_service = Configuration::find_service(&service);
+        if let Err(error) = r_db_service {
+            let exception = ApiException::from_configuration_exception(StatusCode::INTERNAL_SERVER_ERROR.as_u16(), error);
+            return Err(exception.into_response());
+        }
+
+        let o_db_service = r_db_service.unwrap();
         if o_db_service.is_none() {
             return Err(utils::not_found());
         }
@@ -60,7 +66,13 @@ impl ControllerDataBase {
     }
 
     async fn insert(Path(service): Path<String>, Json(dto): Json<DTOGenerateDatabaseQuery>) -> Result<StatusCode, impl IntoResponse> {
-        let o_db_service = Configuration::find_service(&service);
+        let r_db_service = Configuration::find_service(&service);
+        if let Err(error) = r_db_service {
+            let exception = ApiException::from_configuration_exception(StatusCode::INTERNAL_SERVER_ERROR.as_u16(), error);
+            return Err(exception.into_response());
+        }
+
+        let o_db_service = r_db_service.unwrap();
         if o_db_service.is_none() {
             return Err(utils::not_found());
         }
@@ -83,7 +95,13 @@ impl ControllerDataBase {
     }
 
     async fn delete(Path((service, data_base)): Path<(String, String)>) -> Result<StatusCode, impl IntoResponse> {
-        let o_db_service = Configuration::find_service(&service);
+        let r_db_service = Configuration::find_service(&service);
+        if let Err(error) = r_db_service {
+            let exception = ApiException::from_configuration_exception(StatusCode::INTERNAL_SERVER_ERROR.as_u16(), error);
+            return Err(exception.into_response());
+        }
+
+        let o_db_service = r_db_service.unwrap();
         if o_db_service.is_none() {
             return Err(utils::not_found());
         }
@@ -106,7 +124,13 @@ impl ControllerDataBase {
     }
 
     async fn metadata(Path((service, data_base)): Path<(String, String)>) -> Result<Json<Vec<DTOTableDataGroup>>, impl IntoResponse> {
-        let o_db_service = Configuration::find_service(&service);
+        let r_db_service = Configuration::find_service(&service);
+        if let Err(error) = r_db_service {
+            let exception = ApiException::from_configuration_exception(StatusCode::INTERNAL_SERVER_ERROR.as_u16(), error);
+            return Err(exception.into_response());
+        }
+
+        let o_db_service = r_db_service.unwrap();
         if o_db_service.is_none() {
             return Err(utils::not_found());
         }

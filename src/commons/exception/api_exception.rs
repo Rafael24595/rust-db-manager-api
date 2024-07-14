@@ -1,6 +1,7 @@
 use std::fmt;
 use std::error::Error;
 
+use rust_db_manager_core::commons::exception::configuration_exception::ConfigurationException;
 use rust_db_manager_core::commons::exception::connect_exception::ConnectException;
 
 #[derive(Debug, Clone)]
@@ -21,6 +22,13 @@ impl Error for ApiException {}
 impl ApiException {
     
     pub fn from(status: u16, exception: ConnectException) -> ApiException {
+        ApiException {
+            status: status,
+            message: exception.message()
+        }
+    }
+
+    pub fn from_configuration_exception(status: u16, exception: ConfigurationException) -> ApiException {
         ApiException {
             status: status,
             message: exception.message()
