@@ -14,7 +14,13 @@ pub(crate) async fn autentication_handler(headers: HeaderMap, Path(params): Path
         return Err(exception.into_response());
     }
 
-    let o_service = Configuration::find_service(&service.unwrap());
+    let r_service = Configuration::find_service(&service.unwrap());
+    if let Err(error) = r_service {
+        let exception = ApiException::from_configuration_exception(StatusCode::INTERNAL_SERVER_ERROR.as_u16(), error);
+        return Err(exception.into_response());
+    }
+
+    let o_service = r_service.unwrap();
     if o_service.is_none() {
         let exception = ApiException::new(StatusCode::NOT_FOUND.as_u16(), String::from("Service not found."));
         return Err(exception.into_response());

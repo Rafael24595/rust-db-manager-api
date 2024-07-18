@@ -1,4 +1,4 @@
-use rust_db_manager_core::domain::table::table_data_field::TableDataField;
+use rust_db_manager_core::domain::table::group::table_data_field::TableDataField;
 use serde::Serialize;
 
 #[derive(Clone, Serialize)]

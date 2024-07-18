@@ -1,4 +1,4 @@
-use rust_db_manager_core::domain::table::table_data_group::TableDataGroup;
+use rust_db_manager_core::domain::table::group::table_data_group::TableDataGroup;
 use serde::Serialize;
 
 use super::dto_table_data_field::DTOTableDataField;

@@ -45,7 +45,6 @@ impl BuilderJar {
     fn manage_cookie(&mut self, index: usize) -> Result<(), AuthException> {
         let jar_string = self.jar_string.clone();
         let fragment = jar_string[self.last..index].trim();
-        println!("{}", self.buffer.join("; "));
         if self.last > 0 && Self::is_cookie_definition(fragment) {
             self.flush_buffer()?;
         }

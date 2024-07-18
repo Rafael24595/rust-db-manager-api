@@ -1,12 +1,23 @@
+use dotenv::dotenv;
+
 use std::net::SocketAddr;
 
 use tower_http::cors::CorsLayer;
 
 use axum::Router;
-use rust_db_manager_api::{commons::configuration::web_configuration::WebConfiguration, infrastructure::{controller_collection::ControllerCollection, controller_database::ControllerDataBase, controller_document::ControllerDocument, controller_server::ControllerServer, controller_service::ControllerService}};
+use rust_db_manager_api::{
+    commons::configuration::web_configuration::WebConfiguration,
+    infrastructure::{
+        controller_collection::ControllerCollection, controller_database::ControllerDataBase,
+        controller_document::ControllerDocument, controller_server::ControllerServer,
+        controller_service::ControllerService,
+    },
+};
 
 #[tokio::main]
 async fn main() {
+    dotenv().ok();
+
     let _ = WebConfiguration::initialize();
     
     let app = Router::new()
