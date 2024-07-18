@@ -27,4 +27,4 @@ hmac = "0.12.1"
 sha2 = "0.10.8"
 jwt = "0.16.0"
 regex = "1.10.4"
-rust_db_manager_core = { git = "https://github.com/Rafael24595/rust-db-manager.git", branch = "dev" }
+rust_db_manager_core = { git = "https://github.com/Rafael24595/rust-db-manager.git", branch = "0.1.0" }
