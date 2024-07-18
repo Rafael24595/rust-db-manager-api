@@ -1,6 +1,6 @@
 [package]
 name = "rust_db_manager_api"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
@@ -28,4 +28,4 @@ hmac = "0.12.1"
 sha2 = "0.10.8"
 jwt = "0.16.0"
 regex = "1.10.4"
-rust_db_manager_core = { git = "https://github.com/Rafael24595/rust-db-manager.git", branch = "0.1.0" }
+rust_db_manager_core = { git = "https://github.com/Rafael24595/rust-db-manager-core.git", branch = "0.1.1" }
