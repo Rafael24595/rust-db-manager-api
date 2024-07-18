@@ -74,7 +74,7 @@ jobs:
         TAG_EXISTS=$(curl -s -o /dev/null -w "%{http_code}" -H "Authorization: JWT $(curl -s -H "Content-Type: application/json" -X POST -d '{"username": "'${{ secrets.DOCKER_USER }}'", "password": "'${{ secrets.DOCKER_TOKEN }}'"}' https://hub.docker.com/v2/users/login/ | jq -r .token)" https://hub.docker.com/v2/repositories/${REPO}/tags/${VERSION})
         if [ $TAG_EXISTS -eq 200 ]; then
           echo "Tag ${VERSION} already exists. Exiting."
-          exit 0
+          exit 1
         fi
 
     - name: Build and push Docker image
