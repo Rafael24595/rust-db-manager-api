@@ -94,7 +94,10 @@ impl ControllerService {
             return Err(exception.into_response());
         }
 
-        Configuration::remove_service(db_service);
+        if let Err(error) = Configuration::remove_service(db_service) {
+            let exception = ApiException::from_configuration_exception(StatusCode::INTERNAL_SERVER_ERROR.as_u16(), error);
+            return Err(exception.into_response());
+        }
 
         Ok(Self::build_token_response(r_cookie.unwrap(), Body::empty()))
     }
