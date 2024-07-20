@@ -2,8 +2,9 @@ name: Publish Version
 
 on:
   push:
-    branches:
-      - main
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
 
 jobs:
   build:
@@ -15,29 +16,38 @@ jobs:
     - name: Run tests
       run: cargo test --verbose
       
-  create_branch:
+  publish_branch:
     needs: build
     runs-on: ubuntu-latest
     steps:
     - name: Checkout repository
       uses: actions/checkout@v2
 
-    - name: Create and push new branch
-      env:
-        GITHUB_TOKEN: ${{ secrets.RUSTDB_TOKEN }}
+    - name: Extract project version
+      id: cargo_version
       run: |
-        # Extract project version from Cargo.toml
         PROJECT_VERSION=$(grep '^version' Cargo.toml | sed -E 's/version = "(.*)"/\1/')
         echo "Version extracted: $PROJECT_VERSION"
-        
-        # Configure Git
-        git config --global user.name 'github-actions[bot]'
-        git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+        echo "PROJECT_VERSION=$PROJECT_VERSION" >> $GITHUB_ENV
 
+    - name: Check if branch already exists
+      id: check_branch
+      run: |
         if git ls-remote --exit-code --heads https://@github.com/${{ github.repository }}.git "$PROJECT_VERSION"; then
           echo "Branch $PROJECT_VERSION already exists. Failing job."
           exit 1
         fi
+      env:
+        PROJECT_VERSION: ${{ env.PROJECT_VERSION }}
+
+    - name: Create and push new branch
+      env:
+        GITHUB_TOKEN: ${{ secrets.RUSTDB_TOKEN }}
+        PROJECT_VERSION: ${{ env.PROJECT_VERSION }}
+      run: |        
+        # Configure Git
+        git config --global user.name 'github-actions[bot]'
+        git config --global user.email 'github-actions[bot]@users.noreply.github.com'
         
         # Create and push new branch
         git checkout -b "$PROJECT_VERSION"
@@ -45,7 +55,7 @@ jobs:
         git push origin "$PROJECT_VERSION"
 
   push_image:
-    needs: create_branch
+    needs: publish_branch
     runs-on: ubuntu-latest
 
     steps:
@@ -59,6 +69,7 @@ jobs:
       id: cargo_version
       run: |
         VERSION=$(grep '^version' Cargo.toml | sed -E 's/version = "(.*)"/\1/')
+        echo "Version extracted: $PROJECT_VERSION"
         echo "VERSION=$VERSION" >> $GITHUB_ENV
 
     - name: Log in to Docker Hub
