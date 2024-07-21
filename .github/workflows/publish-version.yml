@@ -3,8 +3,6 @@ name: Publish Version
 on:
   push:
     branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
 
 jobs:
 
@@ -69,9 +67,9 @@ jobs:
     - name: Extract project version
       id: cargo_version
       run: |
-        VERSION=$(grep '^version' Cargo.toml | sed -E 's/version = "(.*)"/\1/')
+        PROJECT_VERSION=$(grep '^version' Cargo.toml | sed -E 's/version = "(.*)"/\1/')
         echo "Version extracted: $PROJECT_VERSION"
-        echo "VERSION=$VERSION" >> $GITHUB_ENV
+        echo "PROJECT_VERSION=$PROJECT_VERSION" >> $GITHUB_ENV
 
     - name: Log in to Docker Hub
       uses: docker/login-action@v2
@@ -83,7 +81,7 @@ jobs:
       id: check_tag
       run: |
         REPO="${{ secrets.DOCKER_USER }}/rust-db-manager-api"
-        TAG_EXISTS=$(curl -s -o /dev/null -w "%{http_code}" -H "Authorization: JWT $(curl -s -H "Content-Type: application/json" -X POST -d '{"username": "'${{ secrets.DOCKER_USER }}'", "password": "'${{ secrets.DOCKER_TOKEN }}'"}' https://hub.docker.com/v2/users/login/ | jq -r .token)" https://hub.docker.com/v2/repositories/${REPO}/tags/${VERSION})
+        TAG_EXISTS=$(curl -s -o /dev/null -w "%{http_code}" -H "Authorization: JWT $(curl -s -H "Content-Type: application/json" -X POST -d '{"username": "'${{ secrets.DOCKER_USER }}'", "password": "'${{ secrets.DOCKER_TOKEN }}'"}' https://hub.docker.com/v2/users/login/ | jq -r .token)" https://hub.docker.com/v2/repositories/${REPO}/tags/${{ env.PROJECT_VERSION  }})
         if [ $TAG_EXISTS -eq 200 ]; then
           echo "Tag ${VERSION} already exists. Exiting."
           exit 1
@@ -94,4 +92,4 @@ jobs:
       with:
         context: .
         push: true
-        tags: ${{ secrets.DOCKER_USER }}/rust-db-manager-api:${{ env.VERSION }}
+        tags: ${{ secrets.DOCKER_USER }}/rust-db-manager-api:${{ env.PROJECT_VERSION  }}
