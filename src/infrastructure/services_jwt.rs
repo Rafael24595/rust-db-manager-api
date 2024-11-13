@@ -5,7 +5,7 @@ use std::collections::BTreeMap;
 
 use rust_db_manager_core::{commons::configuration::configuration::Configuration, infrastructure::db_service::DBService};
 
-use crate::{commons::{configuration::web_configuration::WebConfiguration, exception::auth_exception::AuthException}, domain::cookie::cookie::Cookie};
+use crate::{commons::{configuration::web_configuration::WebConfiguration, exception::auth_exception::AuthException}, domain::cookie::{cookie::Cookie, same_site::SameSite}};
 
 pub struct ServicesJWT {
 
@@ -51,7 +51,10 @@ impl ServicesJWT {
     }
 
     pub fn update(token: &str, service: &DBService) -> Result<Cookie, AuthException> {
-        let _ = Self::verify(token)?;
+        if let Err(err) = Self::verify(token) {
+            println!("{:?}", err);
+            return Self::sign(service);
+        }
         
         let mut services = Self::find_services(token)?;
         if services.iter().find(|s| s.name() == service.name()).is_some() {
@@ -155,6 +158,7 @@ impl ServicesJWT {
         let mut cookie = Cookie::new(String::from(WebConfiguration::COOKIE_NAME), token);
         cookie.path = Some(String::from("/"));
         cookie.http_only = Some(true);
+        cookie.same_site = Some(SameSite::Strict);
 
         cookie
     }

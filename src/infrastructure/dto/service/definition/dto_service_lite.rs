@@ -6,6 +6,7 @@ use super::dto_service_category_lite::DTOServiceCategoryLite;
 #[derive(Clone, Serialize)]
 pub struct DTOServiceLite {
     pub name: String,
+    pub protected: bool,
     pub category: DTOServiceCategoryLite
 }
 
@@ -14,6 +15,7 @@ impl DTOServiceLite {
     pub fn from(service: &DBServiceLite) -> Self {
         Self {
             name: service.name(), 
+            protected: service.is_protected(),
             category: DTOServiceCategoryLite::from(&service.category())
         }
     }

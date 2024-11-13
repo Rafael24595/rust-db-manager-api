@@ -288,7 +288,7 @@ impl ControllerService {
                 
                 Ok(Some(ServicesJWT::update(&cookie.value, service)?))
             },
-            None => {
+            _ => {
                 if !service.is_protected() {
                     return Ok(None);
                 }

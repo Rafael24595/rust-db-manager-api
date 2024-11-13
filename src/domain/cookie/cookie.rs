@@ -20,8 +20,8 @@ impl Cookie {
     pub fn new(code: String, value: String) -> Self {
         Cookie {
             code: code, value: value, domain: None, 
-            path: None, expiration: None, max_age: None,
-            secure: None, http_only: None, same_site: None
+            path: Some(String::from("/")), expiration: None, max_age: None,
+            secure: None, http_only: None, same_site: Some(SameSite::Strict)
         }
     }
 
