@@ -18,7 +18,7 @@ impl DTOFieldDefinition {
     pub fn from(definition: &FieldDefinition) -> Self {
         Self {
             order: definition.order(),
-            name: definition.name(),
+            name: definition.name().to_string(),
             code: definition.code().to_string(),
             swsize: definition.swsize(),
             multiple: definition.multiple(),
