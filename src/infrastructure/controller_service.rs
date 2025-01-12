@@ -61,40 +61,37 @@ impl ControllerService {
     }
 
     async fn find(Path(service): Path<String>) -> Result<Json<DTOService>,impl IntoResponse> {
-        let r_db_service = Configuration::find_service(&service);
-        if let Err(error) = r_db_service {
-            let exception = ApiException::from_configuration_exception(StatusCode::INTERNAL_SERVER_ERROR.as_u16(), error);
-            return Err(exception.into_response());
-        }
-
-        let o_db_service = r_db_service.unwrap();
-        if o_db_service.is_none() {
-            return Err(utils::not_found());
-        }
+        let result = utils::find_service_schema(&service).await;
+        if let Err(error) = result {
+            return Err(error.into_response());
+        }    
         
-        Ok(Json(DTOService::from(o_db_service.unwrap())))
+        Ok(Json(DTOService::from(result.unwrap())))
     } 
 
     async fn delete(headers: HeaderMap, Path(service): Path<String>) -> impl IntoResponse {
-        let r_db_service = Configuration::find_service(&service);
-        if let Err(error) = r_db_service {
-            let exception = ApiException::from_configuration_exception(StatusCode::INTERNAL_SERVER_ERROR.as_u16(), error);
-            return Err(exception.into_response());
+        let result = utils::find_service_schema(&service).await;
+        if let Err(error) = result {
+            return Err(error.into_response());
         }
 
-        let o_db_service = r_db_service.unwrap();
-        if o_db_service.is_none() {
-            return Err(utils::not_found());
-        }
+        let db_service = result.unwrap();
 
-        let db_service = o_db_service.unwrap();
-
-        let r_cookie = Self::remove_token(headers, &db_service);
+        let r_cookie = Self::remove_token(headers, &db_service).await;
         if let Err(exception) = r_cookie {
             return Err(exception.into_response());
         }
 
-        if let Err(error) = Configuration::remove_service(db_service) {
+        let config = Configuration::instance().await;
+        if let Err(error) = config {
+            let exception = ApiException::from_configuration_exception(StatusCode::INTERNAL_SERVER_ERROR.as_u16(), error);
+            return Err(exception.into_response());
+        }
+
+        let config = config.unwrap();
+        let mut locked_config = config.write().await;
+
+        if let Err(error) = locked_config.remove_service(db_service).await {
             let exception = ApiException::from_configuration_exception(StatusCode::INTERNAL_SERVER_ERROR.as_u16(), error);
             return Err(exception.into_response());
         }
@@ -103,24 +100,15 @@ impl ControllerService {
     }
 
     async fn status(Path(service): Path<String>) -> Result<(StatusCode, String), impl IntoResponse> {
-        let r_db_service = Configuration::find_service(&service);
-        if let Err(error) = r_db_service {
-            let exception = ApiException::from_configuration_exception(StatusCode::INTERNAL_SERVER_ERROR.as_u16(), error);
-            return Err(exception.into_response());
-        }
-
-        let o_db_service = r_db_service.unwrap();
-        if o_db_service.is_none() {
-            return Err(utils::not_found());
-        }
-        
-        let result = o_db_service.unwrap().instance().await;
+        let result = utils::find_service(&service).await;
         if let Err(error) = result {
-            let exception = ApiException::from(StatusCode::INTERNAL_SERVER_ERROR.as_u16(), error);
-            return Err(exception.into_response());
+            return Err(error.into_response());
         }
 
-        let status = result.unwrap().status().await;
+        let result = result.unwrap();
+        let locked_result = result.lock().await;
+
+        let status = locked_result.status().await;
         if let Err(error) = status {
             let exception = ApiException::from(StatusCode::INTERNAL_SERVER_ERROR.as_u16(), error);
             return Err(exception.into_response());
@@ -130,24 +118,15 @@ impl ControllerService {
     }
 
     async fn metadata(Path(service): Path<String>) -> Result<Json<Vec<DTOTableDataGroup>>, impl IntoResponse> {
-        let r_db_service = Configuration::find_service(&service);
-        if let Err(error) = r_db_service {
-            let exception = ApiException::from_configuration_exception(StatusCode::INTERNAL_SERVER_ERROR.as_u16(), error);
-            return Err(exception.into_response());
-        }
-
-        let o_db_service = r_db_service.unwrap();
-        if o_db_service.is_none() {
-            return Err(utils::not_found());
-        }
-        
-        let result = o_db_service.unwrap().instance().await;
+        let result = utils::find_service(&service).await;
         if let Err(error) = result {
-            let exception = ApiException::from(StatusCode::INTERNAL_SERVER_ERROR.as_u16(), error);
-            return Err(exception.into_response());
+            return Err(error.into_response());
         }
 
-        let metadata = result.unwrap().metadata().await;
+        let result = result.unwrap();
+        let locked_result = result.lock().await;
+
+        let metadata = locked_result.metadata().await;
         if let Err(error) = metadata {
             let exception = ApiException::from(StatusCode::INTERNAL_SERVER_ERROR.as_u16(), error);
             return Err(exception.into_response());
@@ -161,24 +140,15 @@ impl ControllerService {
     }
 
     async fn schema(Path(service): Path<String>) -> Result<Json<DTOCollectionDefinition>, impl IntoResponse> {
-        let r_db_service = Configuration::find_service(&service);
-        if let Err(error) = r_db_service {
-            let exception = ApiException::from_configuration_exception(StatusCode::INTERNAL_SERVER_ERROR.as_u16(), error);
-            return Err(exception.into_response());
-        }
-
-        let o_db_service = r_db_service.unwrap();
-        if o_db_service.is_none() {
-            return Err(utils::not_found());
-        }
-        
-        let result = o_db_service.unwrap().instance().await;
+        let result = utils::find_service(&service).await;
         if let Err(error) = result {
-            let exception = ApiException::from(StatusCode::INTERNAL_SERVER_ERROR.as_u16(), error);
-            return Err(exception.into_response());
+            return Err(error.into_response());
         }
 
-        let definition = result.unwrap().collection_accept_schema().await;
+        let result = result.unwrap();
+        let locked_result = result.lock().await;
+
+        let definition = locked_result.collection_accept_schema().await;
         if let Err(error) = definition {
             let exception = ApiException::from(StatusCode::INTERNAL_SERVER_ERROR.as_u16(), error);
             return Err(exception.into_response());
@@ -188,24 +158,15 @@ impl ControllerService {
     }
 
     async fn schema_filter(Path(service): Path<String>) -> Result<Json<DTOFilterDefinition>, impl IntoResponse> {
-        let r_db_service = Configuration::find_service(&service);
-        if let Err(error) = r_db_service {
-            let exception = ApiException::from_configuration_exception(StatusCode::INTERNAL_SERVER_ERROR.as_u16(), error);
-            return Err(exception.into_response());
-        }
-
-        let o_db_service = r_db_service.unwrap();
-        if o_db_service.is_none() {
-            return Err(utils::not_found());
-        }
-        
-        let result = o_db_service.unwrap().instance().await;
+        let result = utils::find_service(&service).await;
         if let Err(error) = result {
-            let exception = ApiException::from(StatusCode::INTERNAL_SERVER_ERROR.as_u16(), error);
-            return Err(exception.into_response());
+            return Err(error.into_response());
         }
 
-        let schema = result.unwrap().filter_schema().await;
+        let result = result.unwrap();
+        let locked_result = result.lock().await;
+
+        let schema = locked_result.filter_schema().await;
         if let Err(error) = schema {
             let exception = ApiException::from(StatusCode::INTERNAL_SERVER_ERROR.as_u16(), error);
             return Err(exception.into_response());
@@ -215,12 +176,16 @@ impl ControllerService {
     }
 
     async fn find_all(Query(params): Query<DTOQueryPagination>) -> Result<Json<DTOPaginatedCollection<DTOServiceLite>>, impl IntoResponse> {
-        let services = Configuration::find_services();
-        if let Err(error) = services {
+        let config = Configuration::instance().await;
+        if let Err(error) = config {
             let exception = ApiException::from_configuration_exception(StatusCode::INTERNAL_SERVER_ERROR.as_u16(), error);
-            return Err(exception.into_response());
+            return Err(exception);
         }
-        let dto = services.unwrap().iter().map(|s| DTOServiceLite::from(s)).collect();
+
+        let config = config.unwrap();
+        let locked_config = config.read().await;
+
+        let dto = locked_config.find_services().await.iter().map(|s| DTOServiceLite::from(s)).collect();
         let result = Pagination::paginate(params, dto);
         Ok(Json(result))
     }
@@ -231,14 +196,23 @@ impl ControllerService {
             return Err(error.into_response());
         }
         
-        let service = &o_service.unwrap();
+        let service = o_service.unwrap();
 
-        let r_cookie = Self::make_token(headers, service);
+        let r_cookie = Self::make_token(headers, &service).await;
         if let Err(exception) = r_cookie {
             return Err(exception.into_response());
         }
 
-        let db_service = Configuration::push_service(service);
+        let config = Configuration::instance().await;
+        if let Err(error) = config {
+            let exception = ApiException::from_configuration_exception(StatusCode::INTERNAL_SERVER_ERROR.as_u16(), error);
+            return Err(exception.into_response());
+        }
+
+        let config = config.unwrap();
+        let mut locked_config = config.write().await;
+
+        let db_service = locked_config.push_service(service).await;
         if let Err(error) = db_service {
             let exception = ApiException::from_configuration_exception(StatusCode::INTERNAL_SERVER_ERROR.as_u16(), error);
             return Err(exception.into_response());
@@ -248,25 +222,19 @@ impl ControllerService {
     }
 
     async fn suscribe(headers: HeaderMap, Json(dto): Json<DTOServiceSuscribeRequest>) -> impl IntoResponse {
-        let r_db_service = Configuration::find_service(&dto.name);
-        if let Err(error) = r_db_service {
-            let exception = ApiException::from_configuration_exception(StatusCode::INTERNAL_SERVER_ERROR.as_u16(), error);
-            return Err(exception.into_response());
-        }
-
-        let o_db_service = r_db_service.unwrap();
-        if o_db_service.is_none() {
-            let exception = ApiException::new(StatusCode::NOT_FOUND.as_u16(), String::from("Service not found."));
-            return Err(exception.into_response());
+        let result = utils::find_service_schema(&dto.name).await;
+        if let Err(error) = result {
+            return Err(error.into_response());
         }
         
-        let db_service = &o_db_service.unwrap();
+        let db_service = &result.unwrap();
+
         if db_service.is_authorized(dto.password).is_err() {
             let exception = ApiException::new(StatusCode::UNAUTHORIZED.as_u16(), String::from("Authentication error."));
             return Err(exception.into_response());
         }
 
-        let r_cookie = Self::make_token(headers, db_service);
+        let r_cookie = Self::make_token(headers, db_service).await;
         if let Err(exception) = r_cookie {
             return Err(exception.into_response());
         }
@@ -274,7 +242,7 @@ impl ControllerService {
         Ok(Self::build_token_response(r_cookie.unwrap(), Body::empty()))
     }
 
-    fn make_token(headers: HeaderMap, service: &DBService) -> Result<Option<Cookie>, AuthException> {
+    async fn make_token(headers: HeaderMap, service: &DBService) -> Result<Option<Cookie>, AuthException> {
         let o_cookie = find_token(headers);
         if o_cookie.is_err() {
             return Err(o_cookie.unwrap_err());
@@ -285,8 +253,7 @@ impl ControllerService {
                 if !service.is_protected() {
                     return Ok(Some(cookie));
                 }
-                
-                Ok(Some(ServicesJWT::update(&cookie.value, service)?))
+                Ok(Some(ServicesJWT::update(&cookie.value, service).await?))
             },
             _ => {
                 if !service.is_protected() {
@@ -297,7 +264,7 @@ impl ControllerService {
         }
     }
 
-    fn remove_token(headers: HeaderMap, service: &DBService) -> Result<Option<Cookie>, AuthException> {
+    async fn remove_token(headers: HeaderMap, service: &DBService) -> Result<Option<Cookie>, AuthException> {
         let o_cookie = find_token(headers);
         if o_cookie.is_err() {
             return Err(o_cookie.unwrap_err());
@@ -308,7 +275,7 @@ impl ControllerService {
                 if !service.is_protected() {
                     return Ok(Some(cookie));
                 }
-                Ok(Some(ServicesJWT::remove(&cookie.value, service)?))
+                Ok(Some(ServicesJWT::remove(&cookie.value, service).await?))
             },
             None => return Ok(None),
         }

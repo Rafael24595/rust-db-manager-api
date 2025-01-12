@@ -15,6 +15,16 @@ impl BuilderConnectionData {
     }
 
     fn identify(dto: &DTODBConnectionData) -> Result<EDBRepository, ApiException> {
+        let category = &dto.category;
+        if !category.is_empty() {
+            let o_category = EDBRepository::from_string(category);
+            if let None = o_category {
+                let exception = ApiException::new(404, format!("Invalid scheme '{}'.", category));
+                return Err(exception);    
+            }
+            return Ok(o_category.unwrap());
+        }
+
         let url = Url::parse(&dto.connection);
         if let Err(err) = url {
             let exception = ApiException::new(404, err.to_string());

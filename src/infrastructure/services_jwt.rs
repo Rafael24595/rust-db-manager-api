@@ -3,12 +3,19 @@ use jwt::{SignWithKey, VerifyWithKey};
 use sha2::Sha256;
 use std::collections::BTreeMap;
 
-use rust_db_manager_core::{commons::configuration::configuration::Configuration, infrastructure::db_service::DBService};
+use rust_db_manager_core::infrastructure::db_service::DBService;
 
-use crate::{commons::{configuration::web_configuration::WebConfiguration, exception::auth_exception::AuthException}, domain::cookie::{cookie::Cookie, same_site::SameSite}};
+use crate::{
+    commons::{
+        configuration::web_configuration::WebConfiguration,
+        exception::auth_exception::AuthException,
+    },
+    domain::cookie::{cookie::Cookie, same_site::SameSite},
+};
+
+use super::utils;
 
 pub struct ServicesJWT {
-
 }
 
 impl ServicesJWT {
@@ -50,13 +57,13 @@ impl ServicesJWT {
         Ok(Self::default_cookie(token_str.unwrap()))
     }
 
-    pub fn update(token: &str, service: &DBService) -> Result<Cookie, AuthException> {
-        if let Err(err) = Self::verify(token) {
+    pub async fn update(token: &str, service: &DBService) -> Result<Cookie, AuthException> {
+        if let Err(err) = Self::verify(token).await {
             println!("{:?}", err);
             return Self::sign(service);
         }
         
-        let mut services = Self::find_services(token)?;
+        let mut services = Self::find_services(token).await?;
         if services.iter().find(|s| s.name() == service.name()).is_some() {
             let exception = AuthException::new(500, String::from("This token is already subscribed to the service."));
             return Err(exception);
@@ -67,10 +74,10 @@ impl ServicesJWT {
         Ok(Self::sign_services(services)?)
     }
 
-    pub fn remove(token: &str, service: &DBService) -> Result<Cookie, AuthException> {
-        let _ = Self::verify(token)?;
+    pub async fn remove(token: &str, service: &DBService) -> Result<Cookie, AuthException> {
+        let _ = Self::verify(token).await?;
         
-        let mut services = Self::find_services(token)?;
+        let mut services = Self::find_services(token).await?;
         if let Some(position) = services.iter().position(|s| s.name() == service.name()) {
             services.remove(position);
         }
@@ -78,8 +85,8 @@ impl ServicesJWT {
         Ok(Self::sign_services(services)?)
     }
 
-    pub fn verify(token: &str) -> Result<Vec<DBService>, AuthException> {
-        let services = Self::find_services(token)?;
+    pub async fn verify(token: &str) -> Result<Vec<DBService>, AuthException> {
+        let services = Self::find_services(token).await?;
         let salt = services.iter()
             .map(|s| s.salt())
             .collect::<Vec<String>>()
@@ -100,7 +107,7 @@ impl ServicesJWT {
         Ok(services)
     }
 
-    fn find_services(token: &str) -> Result<Vec<DBService>, AuthException> {
+    async fn find_services(token: &str) -> Result<Vec<DBService>, AuthException> {
         let fragments = token.split(".").collect::<Vec<&str>>();
         if fragments.len() != 3 {
             let exception = AuthException::new_reset(401, String::from("Invalid token."));
@@ -137,18 +144,12 @@ impl ServicesJWT {
         let mut collection = Vec::new();
 
         for s_service in v_services.unwrap().split("-").filter(|s| !s.is_empty()).collect::<Vec<&str>>() {
-            let r_service = Configuration::find_service(s_service);
-            if let Err(error) = r_service {
-                let exception = AuthException::from_configuration_exception(500, error, false);
+            let result = utils::find_service_schema(&s_service).await;
+            if let Err(error) = result {
+                let exception = AuthException::from(500, error, false);
                 return Err(exception);
             }
-
-            let service = r_service.unwrap();
-            if service.is_none() {
-                let exception = AuthException::new_reset(500, String::from("Unknown service."));
-                return Err(exception);
-            }
-            collection.push(service.unwrap());
+            collection.push(result.unwrap());
         }
 
         Ok(collection)

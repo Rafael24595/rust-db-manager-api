@@ -1,14 +1,21 @@
-use axum::{
-    http::StatusCode, response::IntoResponse, routing::get, Json, Router
+use axum::{http::StatusCode, response::IntoResponse, routing::get, Json, Router};
+
+use rust_db_manager_core::{
+    domain::filter::e_filter_category::EFilterCategory,
+    infrastructure::repository::e_db_repository::EDBRepository,
 };
 
-use rust_db_manager_core::{domain::filter::e_filter_category::EFilterCategory, infrastructure::repository::e_db_repository::EDBRepository};
-
-use crate::commons::{configuration::web_configuration::WebConfiguration, exception::api_exception::ApiException};
+use crate::commons::{
+    configuration::web_configuration::WebConfiguration, exception::api_exception::ApiException,
+};
 
 use super::{
     db_assets::WebEDBRepository,
-    dto::{dto_server_status::DTOServerStatus, field::filter::dto_filter_resources::DTOFilterResources, service::definition::dto_service_category_lite::DTOServiceCategoryLite}
+    dto::{
+        dto_server_status::DTOServerStatus,
+        field::filter::dto_filter_resources::DTOFilterResources,
+        service::definition::dto_service_category_lite::DTOServiceCategoryLite,
+    },
 };
 
 pub struct ControllerServer {
@@ -24,11 +31,18 @@ impl ControllerServer {
     }
 
     async fn metadata() -> Result<Json<DTOServerStatus>, impl IntoResponse> {
-        let result = WebConfiguration::as_dto();
+        let config = WebConfiguration::instance().await;
+        if let Err(error) = config {
+            let exception = ApiException::from_configuration_exception(StatusCode::INTERNAL_SERVER_ERROR.as_u16(), error);
+            return Err(exception.into_response());
+        }
+        
+        let result = config.unwrap().read().await.as_dto().await;
         if let Err(error) = result {
             let exception = ApiException::from_configuration_exception(StatusCode::INTERNAL_SERVER_ERROR.as_u16(), error);
             return Err(exception.into_response());
         }
+
         Ok(Json(result.unwrap()))
     }
 

@@ -6,13 +6,10 @@ use axum::{
     routing::{delete, get, post},
     Json, Router,
 };
-use rust_db_manager_core::{
-    commons::configuration::configuration::Configuration,
-    domain::{
+use rust_db_manager_core::domain::{
         data_base::generate_database_query::GenerateDatabaseQuery,
         filter::data_base_query::DataBaseQuery,
-    },
-};
+    };
 
 use crate::commons::exception::api_exception::ApiException;
 
@@ -39,24 +36,15 @@ impl ControllerDataBase {
     }
 
     async fn find_all(Path(service): Path<String>) -> Result<Json<Vec<String>>, impl IntoResponse> {
-        let r_db_service = Configuration::find_service(&service);
-        if let Err(error) = r_db_service {
-            let exception = ApiException::from_configuration_exception(StatusCode::INTERNAL_SERVER_ERROR.as_u16(), error);
-            return Err(exception.into_response());
-        }
-
-        let o_db_service = r_db_service.unwrap();
-        if o_db_service.is_none() {
-            return Err(utils::not_found());
-        }
-        
-        let result = o_db_service.unwrap().instance().await;
+        let result = utils::find_service(&service).await;
         if let Err(error) = result {
-            let exception = ApiException::from(StatusCode::INTERNAL_SERVER_ERROR.as_u16(), error);
-            return Err(exception.into_response());
+            return Err(error.into_response());
         }
 
-        let collection = result.unwrap().data_base_find_all().await;
+        let result = result.unwrap();
+        let locked_result = result.lock().await;
+
+        let collection = locked_result.data_base_find_all().await;
         if let Err(error) = collection {
             let exception = ApiException::from(StatusCode::INTERNAL_SERVER_ERROR.as_u16(), error);
             return Err(exception.into_response());
@@ -66,26 +54,17 @@ impl ControllerDataBase {
     }
 
     async fn insert(Path(service): Path<String>, Json(dto): Json<DTOGenerateDatabaseQuery>) -> Result<StatusCode, impl IntoResponse> {
-        let r_db_service = Configuration::find_service(&service);
-        if let Err(error) = r_db_service {
-            let exception = ApiException::from_configuration_exception(StatusCode::INTERNAL_SERVER_ERROR.as_u16(), error);
-            return Err(exception.into_response());
+        let result = utils::find_service(&service).await;
+        if let Err(error) = result {
+            return Err(error.into_response());
         }
 
-        let o_db_service = r_db_service.unwrap();
-        if o_db_service.is_none() {
-            return Err(utils::not_found());
-        }
-        
-        let result = o_db_service.unwrap().instance().await;
-        if let Err(error) = result {
-            let exception = ApiException::from(StatusCode::INTERNAL_SERVER_ERROR.as_u16(), error);
-            return Err(exception.into_response());
-        }
+        let result = result.unwrap();
+        let locked_result = result.lock().await;
 
         let query = GenerateDatabaseQuery::new(dto.data_base);
 
-        let collection = result.unwrap().data_base_create(&query).await;
+        let collection = locked_result.data_base_create(&query).await;
         if let Err(error) = collection {
             let exception = ApiException::from(StatusCode::INTERNAL_SERVER_ERROR.as_u16(), error);
             return Err(exception.into_response());
@@ -95,26 +74,17 @@ impl ControllerDataBase {
     }
 
     async fn delete(Path((service, data_base)): Path<(String, String)>) -> Result<StatusCode, impl IntoResponse> {
-        let r_db_service = Configuration::find_service(&service);
-        if let Err(error) = r_db_service {
-            let exception = ApiException::from_configuration_exception(StatusCode::INTERNAL_SERVER_ERROR.as_u16(), error);
-            return Err(exception.into_response());
+        let result = utils::find_service(&service).await;
+        if let Err(error) = result {
+            return Err(error.into_response());
         }
 
-        let o_db_service = r_db_service.unwrap();
-        if o_db_service.is_none() {
-            return Err(utils::not_found());
-        }
-        
-        let result = o_db_service.unwrap().instance().await;
-        if let Err(error) = result {
-            let exception = ApiException::from(StatusCode::INTERNAL_SERVER_ERROR.as_u16(), error);
-            return Err(exception.into_response());
-        }
+        let result = result.unwrap();
+        let locked_result = result.lock().await;
 
         let query = GenerateDatabaseQuery::new(data_base);
 
-        let collection = result.unwrap().data_base_drop(&query).await;
+        let collection = locked_result.data_base_drop(&query).await;
         if let Err(error) = collection {
             let exception = ApiException::from(StatusCode::INTERNAL_SERVER_ERROR.as_u16(), error);
             return Err(exception.into_response());
@@ -124,26 +94,17 @@ impl ControllerDataBase {
     }
 
     async fn metadata(Path((service, data_base)): Path<(String, String)>) -> Result<Json<Vec<DTOTableDataGroup>>, impl IntoResponse> {
-        let r_db_service = Configuration::find_service(&service);
-        if let Err(error) = r_db_service {
-            let exception = ApiException::from_configuration_exception(StatusCode::INTERNAL_SERVER_ERROR.as_u16(), error);
-            return Err(exception.into_response());
-        }
-
-        let o_db_service = r_db_service.unwrap();
-        if o_db_service.is_none() {
-            return Err(utils::not_found());
-        }
-
-        let result = o_db_service.unwrap().instance().await;
+        let result = utils::find_service(&service).await;
         if let Err(error) = result {
-            let exception = ApiException::from(StatusCode::INTERNAL_SERVER_ERROR.as_u16(), error);
-            return Err(exception.into_response());
+            return Err(error.into_response());
         }
+
+        let result = result.unwrap();
+        let mut locked_result = result.lock().await;
 
         let query = DataBaseQuery::from(data_base);
 
-        let metadata = result.unwrap().data_base_metadata(&query).await;
+        let metadata = locked_result.data_base_metadata(&query).await;
         if let Err(error) = metadata {
             let exception = ApiException::from(StatusCode::INTERNAL_SERVER_ERROR.as_u16(), error);
             return Err(exception.into_response());

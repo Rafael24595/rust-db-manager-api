@@ -7,9 +7,7 @@ use axum::{
     Json, Router,
 };
 use rust_db_manager_core::{
-    commons::{
-        configuration::configuration::Configuration, utils::document_keys_to_filter_element,
-    },
+    commons::utils::document_keys_to_filter_element,
     domain::filter::{collection_query::CollectionQuery, document_query::DocumentQuery},
 };
 
@@ -44,26 +42,17 @@ impl ControllerDocument {
     }
 
     async fn find_all(Path((service, data_base, collection)): Path<(String, String, String)>, Query(params): Query<DTOQueryPagination>) -> Result<Json<DTOCollectionData>, impl IntoResponse> {
-        let r_db_service = Configuration::find_service(&service);
-        if let Err(error) = r_db_service {
-            let exception = ApiException::from_configuration_exception(StatusCode::INTERNAL_SERVER_ERROR.as_u16(), error);
-            return Err(exception.into_response());
+        let result = utils::find_service(&service).await;
+        if let Err(error) = result {
+            return Err(error.into_response());
         }
 
-        let o_db_service = r_db_service.unwrap();
-        if o_db_service.is_none() {
-            return Err(utils::not_found());
-        }
-        
-        let result = o_db_service.unwrap().instance().await;
-        if let Err(error) = result {
-            let exception = ApiException::from(StatusCode::INTERNAL_SERVER_ERROR.as_u16(), error);
-            return Err(exception.into_response());
-        }
+        let result = result.unwrap();
+        let locked_result = result.lock().await;
 
         let query = DocumentQuery::from(data_base, collection, Some(params.limit), Some(params.offset), None);
 
-        let data = result.unwrap().find_all(&query).await;
+        let data = locked_result.find_all(&query).await;
         if let Err(error) = data {
             let exception = ApiException::from(StatusCode::INTERNAL_SERVER_ERROR.as_u16(), error);
             return Err(exception.into_response());
@@ -73,22 +62,13 @@ impl ControllerDocument {
     }
 
     async fn find(Path((service, data_base, collection)): Path<(String, String, String)>, Json(dto): Json<Vec<DTODocumentKey>>) -> Result<Json<DTODocumentData>, impl IntoResponse> {
-        let r_db_service = Configuration::find_service(&service);
-        if let Err(error) = r_db_service {
-            let exception = ApiException::from_configuration_exception(StatusCode::INTERNAL_SERVER_ERROR.as_u16(), error);
-            return Err(exception.into_response());
+        let result = utils::find_service(&service).await;
+        if let Err(error) = result {
+            return Err(error.into_response());
         }
 
-        let o_db_service = r_db_service.unwrap();
-        if o_db_service.is_none() {
-            return Err(utils::not_found());
-        }
-        
-        let result = o_db_service.unwrap().instance().await;
-        if let Err(error) = result {
-            let exception = ApiException::from(StatusCode::INTERNAL_SERVER_ERROR.as_u16(), error);
-            return Err(exception.into_response());
-        }
+        let result = result.unwrap();
+        let locked_result = result.lock().await;
 
         let mut keys = Vec::new();
         for dto_key in dto {
@@ -102,7 +82,7 @@ impl ControllerDocument {
         let filter = document_keys_to_filter_element(keys);
         let query = DocumentQuery::from_filter(data_base, collection, filter);
 
-        let r_document = result.unwrap().find(&query).await;
+        let r_document = locked_result.find(&query).await;
         if let Err(error) = r_document {
             let exception = ApiException::from(StatusCode::INTERNAL_SERVER_ERROR.as_u16(), error);
             return Err(exception.into_response());
@@ -119,22 +99,13 @@ impl ControllerDocument {
     }
 
     async fn query(Path((service, data_base, collection)): Path<(String, String, String)>, Query(params): Query<DTOQueryPagination>, Json(dto): Json<DTOFilterElement>) -> Result<Json<DTOCollectionData>, impl IntoResponse> {
-        let r_db_service = Configuration::find_service(&service);
-        if let Err(error) = r_db_service {
-            let exception = ApiException::from_configuration_exception(StatusCode::INTERNAL_SERVER_ERROR.as_u16(), error);
-            return Err(exception.into_response());
+        let result = utils::find_service(&service).await;
+        if let Err(error) = result {
+            return Err(error.into_response());
         }
 
-        let o_db_service = r_db_service.unwrap();
-        if o_db_service.is_none() {
-            return Err(utils::not_found());
-        }
-        
-        let result = o_db_service.unwrap().instance().await;
-        if let Err(error) = result {
-            let exception = ApiException::from(StatusCode::INTERNAL_SERVER_ERROR.as_u16(), error);
-            return Err(exception.into_response());
-        }
+        let result = result.unwrap();
+        let locked_result = result.lock().await;
 
         let filter = dto.from_dto();
         if let Err(exception) = filter {
@@ -143,7 +114,7 @@ impl ControllerDocument {
 
         let query = DocumentQuery::from(data_base, collection, Some(params.limit), Some(params.offset), Some(filter.unwrap()));
 
-        let data = result.unwrap().find_query(&query).await;
+        let data = locked_result.find_query(&query).await;
         if let Err(error) = data {
             let exception = ApiException::from(StatusCode::INTERNAL_SERVER_ERROR.as_u16(), error);
             return Err(exception.into_response());
@@ -154,26 +125,17 @@ impl ControllerDocument {
 
 
     async fn insert(Path((service, data_base, collection)): Path<(String, String, String)>, Json(dto): Json<DTOCreateDocument>) -> Result<Json<DTODocumentData>, impl IntoResponse> {
-        let r_db_service = Configuration::find_service(&service);
-        if let Err(error) = r_db_service {
-            let exception = ApiException::from_configuration_exception(StatusCode::INTERNAL_SERVER_ERROR.as_u16(), error);
-            return Err(exception.into_response());
+        let result = utils::find_service(&service).await;
+        if let Err(error) = result {
+            return Err(error.into_response());
         }
 
-        let o_db_service = r_db_service.unwrap();
-        if o_db_service.is_none() {
-            return Err(utils::not_found());
-        }
-        
-        let result = o_db_service.unwrap().instance().await;
-        if let Err(error) = result {
-            let exception = ApiException::from(StatusCode::INTERNAL_SERVER_ERROR.as_u16(), error);
-            return Err(exception.into_response());
-        }
+        let result = result.unwrap();
+        let locked_result = result.lock().await;
 
         let query = CollectionQuery::from(data_base, collection);
 
-        let document = result.unwrap().insert(&query, &dto.document).await;
+        let document = locked_result.insert(&query, &dto.document).await;
         if let Err(error) = document {
             let exception = ApiException::from(StatusCode::INTERNAL_SERVER_ERROR.as_u16(), error);
             return Err(exception.into_response());
@@ -183,22 +145,13 @@ impl ControllerDocument {
     }
 
     async fn update(Path((service, data_base, collection)): Path<(String, String, String)>, Json(dto): Json<DTOUpdateDocument>) -> Result<Json<Vec<DTODocumentData>>, impl IntoResponse> {
-        let r_db_service = Configuration::find_service(&service);
-        if let Err(error) = r_db_service {
-            let exception = ApiException::from_configuration_exception(StatusCode::INTERNAL_SERVER_ERROR.as_u16(), error);
-            return Err(exception.into_response());
+        let result = utils::find_service(&service).await;
+        if let Err(error) = result {
+            return Err(error.into_response());
         }
 
-        let o_db_service = r_db_service.unwrap();
-        if o_db_service.is_none() {
-            return Err(utils::not_found());
-        }
-        
-        let result = o_db_service.unwrap().instance().await;
-        if let Err(error) = result {
-            let exception = ApiException::from(StatusCode::INTERNAL_SERVER_ERROR.as_u16(), error);
-            return Err(exception.into_response());
-        }
+        let result = result.unwrap();
+        let locked_result = result.lock().await;
 
         let mut keys = Vec::new();
         for dto_key in dto.keys {
@@ -212,7 +165,7 @@ impl ControllerDocument {
         let filter = document_keys_to_filter_element(keys);
         let query = DocumentQuery::from_filter(data_base, collection, filter);
 
-        let documents = result.unwrap().update(&query, &dto.document).await;
+        let documents = locked_result.update(&query, &dto.document).await;
         if let Err(error) = documents {
             let exception = ApiException::from(StatusCode::INTERNAL_SERVER_ERROR.as_u16(), error);
             return Err(exception.into_response());
@@ -225,22 +178,13 @@ impl ControllerDocument {
     }
 
     async fn delete(Path((service, data_base, collection)): Path<(String, String, String)>, Json(dto): Json<Vec<DTODocumentKey>>) -> Result<Json<Vec<DTODocumentData>>, impl IntoResponse> {
-        let r_db_service = Configuration::find_service(&service);
-        if let Err(error) = r_db_service {
-            let exception = ApiException::from_configuration_exception(StatusCode::INTERNAL_SERVER_ERROR.as_u16(), error);
-            return Err(exception.into_response());
+        let result = utils::find_service(&service).await;
+        if let Err(error) = result {
+            return Err(error.into_response());
         }
 
-        let o_db_service = r_db_service.unwrap();
-        if o_db_service.is_none() {
-            return Err(utils::not_found());
-        }
-        
-        let result = o_db_service.unwrap().instance().await;
-        if let Err(error) = result {
-            let exception = ApiException::from(StatusCode::INTERNAL_SERVER_ERROR.as_u16(), error);
-            return Err(exception.into_response());
-        }
+        let result = result.unwrap();
+        let locked_result = result.lock().await;
 
         let mut keys = Vec::new();
         for dto_key in dto {
@@ -254,7 +198,7 @@ impl ControllerDocument {
         let filter = document_keys_to_filter_element(keys);
         let query = DocumentQuery::from_filter(data_base, collection, filter);
 
-        let documents = result.unwrap().delete(&query).await;
+        let documents = locked_result.delete(&query).await;
         if let Err(error) = documents {
             let exception = ApiException::from(StatusCode::INTERNAL_SERVER_ERROR.as_u16(), error);
             return Err(exception.into_response());

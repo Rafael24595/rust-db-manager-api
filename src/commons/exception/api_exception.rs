@@ -35,6 +35,14 @@ impl ApiException {
         }
     }
 
+    pub fn from_error(status: u16, exception: &impl Error) -> ApiException {
+        ApiException {
+            status: status,
+            message: exception.to_string()
+        }
+    }
+
+
     pub fn new(status: u16, message: String) -> ApiException {
         ApiException {
             status,
