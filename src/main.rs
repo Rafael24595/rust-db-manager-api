@@ -1,6 +1,6 @@
 use commons::configuration::web_configuration::WebConfiguration;
 use dotenv::dotenv;
-use infrastructure::{controller_collection::ControllerCollection, controller_database::ControllerDataBase, controller_server::ControllerServer, controller_service::ControllerService};
+use infrastructure::{controller_collection::ControllerCollection, controller_database::ControllerDataBase, controller_document::ControllerDocument, controller_server::ControllerServer, controller_service::ControllerService};
 
 use std::net::SocketAddr;
 
@@ -141,6 +141,7 @@ async fn main() {
         .merge(ControllerService::route(Router::new()))
         .merge(ControllerDataBase::route(Router::new()))
         .merge(ControllerCollection::route(Router::new()))
+        .merge(ControllerDocument::route(Router::new()))
         .layer(CorsLayer::very_permissive())
         .into_make_service_with_connect_info::<SocketAddr>();
 
