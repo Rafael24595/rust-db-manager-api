@@ -283,7 +283,7 @@ impl ControllerCollection {
         }
 
         let result = result.unwrap();
-        let locked_result = result.lock().await;
+        let mut locked_result = result.lock().await;
 
         let query = CollectionQuery::from(data_base, collection);
 

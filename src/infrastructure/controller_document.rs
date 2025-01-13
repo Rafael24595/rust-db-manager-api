@@ -48,7 +48,7 @@ impl ControllerDocument {
         }
 
         let result = result.unwrap();
-        let locked_result = result.lock().await;
+        let mut locked_result = result.lock().await;
 
         let query = DocumentQuery::from(data_base, collection, Some(params.limit), Some(params.offset), None);
 
@@ -68,7 +68,7 @@ impl ControllerDocument {
         }
 
         let result = result.unwrap();
-        let locked_result = result.lock().await;
+        let mut locked_result = result.lock().await;
 
         let mut keys = Vec::new();
         for dto_key in dto {
@@ -105,7 +105,7 @@ impl ControllerDocument {
         }
 
         let result = result.unwrap();
-        let locked_result = result.lock().await;
+        let mut locked_result = result.lock().await;
 
         let filter = dto.from_dto();
         if let Err(exception) = filter {

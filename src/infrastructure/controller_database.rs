@@ -60,7 +60,7 @@ impl ControllerDataBase {
         }
 
         let result = result.unwrap();
-        let locked_result = result.lock().await;
+        let mut locked_result = result.lock().await;
 
         let query = GenerateDatabaseQuery::new(dto.data_base);
 
