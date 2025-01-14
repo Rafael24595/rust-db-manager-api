@@ -8,8 +8,6 @@ use super::dto_document_key::DTODocumentKey;
 pub struct DTODocumentData {
     data_base: String,
     collection: String,
-    base_key: Option<DTODocumentKey>,
-    keys: Vec<DTODocumentKey>,
     document: String
 }
 
@@ -19,13 +17,6 @@ impl DTODocumentData {
         Self {
             data_base: document.data_base(),
             collection: document.collection(),
-            base_key: match document.base_key() {
-                Some(key) => Some(DTODocumentKey::from(&key)),
-                None => None,
-            },
-            keys: document.keys().iter()
-                .map(|k| DTODocumentKey::from(k))
-                .collect(),
             document: document.document(),
         }
     }

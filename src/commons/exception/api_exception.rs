@@ -42,6 +42,12 @@ impl ApiException {
         }
     }
 
+    pub fn from_message(status: u16, message: &str) -> ApiException {
+        ApiException {
+            status: status,
+            message: String::from(message)
+        }
+    }
 
     pub fn new(status: u16, message: String) -> ApiException {
         ApiException {

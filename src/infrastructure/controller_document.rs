@@ -6,10 +6,7 @@ use axum::{
     routing::{delete, get, post, put},
     Json, Router,
 };
-use rust_db_manager_core::{
-    commons::utils::document_keys_to_filter_element,
-    domain::filter::{collection_query::CollectionQuery, document_query::DocumentQuery},
-};
+use rust_db_manager_core::domain::filter::{collection_query::CollectionQuery, document_query::DocumentQuery};
 
 use crate::commons::exception::api_exception::ApiException;
 
@@ -79,7 +76,7 @@ impl ControllerDocument {
             keys.push(key.unwrap());
         }
 
-        let filter = document_keys_to_filter_element(keys);
+        let filter = utils::document_keys_to_filter_element(keys);
         let query = DocumentQuery::from_filter(data_base, collection, filter);
 
         let r_document = locked_result.find(&query).await;
@@ -162,7 +159,7 @@ impl ControllerDocument {
             keys.push(key.unwrap());
         }
 
-        let filter = document_keys_to_filter_element(keys);
+        let filter = utils::document_keys_to_filter_element(keys);
         let query = DocumentQuery::from_filter(data_base, collection, filter);
 
         let documents = locked_result.update(&query, &dto.document).await;
@@ -195,7 +192,7 @@ impl ControllerDocument {
             keys.push(key.unwrap());
         }
 
-        let filter = document_keys_to_filter_element(keys);
+        let filter = utils::document_keys_to_filter_element(keys);
         let query = DocumentQuery::from_filter(data_base, collection, filter);
 
         let documents = locked_result.delete(&query).await;

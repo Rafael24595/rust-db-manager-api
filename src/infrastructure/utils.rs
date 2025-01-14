@@ -9,7 +9,11 @@ use axum::{
     response::IntoResponse,
 };
 use rust_db_manager_core::{
-    commons::configuration::configuration::Configuration, infrastructure::db_service::DBService,
+    commons::configuration::configuration::Configuration,
+    domain::{
+        document::document_key::DocumentKey, e_json_type::EJSONType, filter::{filter_element::FilterElement, filter_value_attribute::FilterValueAttribute}
+    },
+    infrastructure::db_service::DBService,
     service::service::Service,
 };
 use tokio::sync::Mutex;
@@ -117,6 +121,34 @@ pub(crate) fn find_token(headers: HeaderMap) -> Result<Option<Cookie>, AuthExcep
     }
 
     Ok(jar.unwrap().find(WebConfiguration::COOKIE_NAME))
+}
+
+pub(crate) fn document_keys_to_filter_element(documents: Vec<DocumentKey>) -> FilterElement {
+    let mut filter = FilterElement::new();
+
+    for document in documents {
+        match document.json_type() {
+            EJSONType::STRING => {
+                filter.push(FilterElement::id_string(
+                    document.name(), 
+                    document.value(), 
+                    document.attributes().iter()
+                    .map(|a| FilterValueAttribute::new(a.key(), a.value())).collect()));
+            },
+            EJSONType::NUMERIC => {
+                filter.push(FilterElement::id_numeric(
+                    document.name(), 
+                    document.value(), 
+                    document.attributes().iter()
+                    .map(|a| FilterValueAttribute::new(a.key(), a.value())).collect()));
+            },
+            EJSONType::BOOLEAN => {
+                //TODO: error
+            },
+        }
+    }
+
+    filter
 }
 
 pub(crate) fn not_found_exception() -> ApiException {
