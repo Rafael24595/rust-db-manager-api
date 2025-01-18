@@ -145,6 +145,12 @@ pub(crate) fn document_keys_to_filter_element(documents: Vec<DocumentKey>) -> Fi
             EJSONType::BOOLEAN => {
                 //TODO: error
             },
+            EJSONType::OBJECT => {
+                //TODO: error
+            },
+            EJSONType::ARRAY => {
+                //TODO: error
+            },
         }
     }
 
