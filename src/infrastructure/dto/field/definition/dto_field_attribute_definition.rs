@@ -7,7 +7,7 @@ use super::dto_field_attribute_default_definition::DTOFieldAttributeDefaultDefin
 pub struct DTOFieldAttributeDefinition {
     name: String,
     code: String,
-    values: Vec<DTOFieldAttributeDefaultDefinition>,
+    values: Vec<DTOFieldAttributeDefaultDefinition>
 }
 
 impl DTOFieldAttributeDefinition {
