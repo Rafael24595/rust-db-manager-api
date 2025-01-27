@@ -19,7 +19,6 @@ use crate::{
 
 use super::{
     dto::{
-        collection::dto_collection_definition::DTOCollectionDefinition,
         field::filter::definition::dto_filter_definition::DTOFilterDefinition,
         pagination::{
             dto_paginated_collection::DTOPaginatedCollection,
@@ -51,7 +50,6 @@ impl ControllerService {
             .route("/api/v1/service/:service", delete(Self::delete))
             .route("/api/v1/service/:service/status", get(Self::status))
             .route("/api/v1/service/:service/metadata", get(Self::metadata))
-            .route("/api/v1/service/:service/schema", get(Self::schema))
             .route("/api/v1/service/:service/schema-filter", get(Self::schema_filter))
             .route_layer(middleware::from_fn(handler::autentication_handler))
 
@@ -137,24 +135,6 @@ impl ControllerService {
             .collect();
 
         Ok(Json(dto))
-    }
-
-    async fn schema(Path(service): Path<String>) -> Result<Json<DTOCollectionDefinition>, impl IntoResponse> {
-        let result = utils::find_service(&service).await;
-        if let Err(error) = result {
-            return Err(error.into_response());
-        }
-
-        let result = result.unwrap();
-        let locked_result = result.lock().await;
-
-        let definition = locked_result.collection_accept_schema().await;
-        if let Err(error) = definition {
-            let exception = ApiException::from(StatusCode::INTERNAL_SERVER_ERROR.as_u16(), error);
-            return Err(exception.into_response());
-        }
-        
-        Ok(Json(DTOCollectionDefinition::from(definition.unwrap())))
     }
 
     async fn schema_filter(Path(service): Path<String>) -> Result<Json<DTOFilterDefinition>, impl IntoResponse> {

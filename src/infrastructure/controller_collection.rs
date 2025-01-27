@@ -19,8 +19,7 @@ use super::{
             definition::dto_action_definition::DTOActionDefinition, generate::dto_action::DTOAction,
         },
         collection::{
-            dto_generate_collection_query::DTOGenerateCollectionQuery,
-            dto_rename_collection_query::DTORenameCollectionQuery,
+            dto_collection_definition::DTOCollectionDefinition, dto_generate_collection_query::DTOGenerateCollectionQuery, dto_rename_collection_query::DTORenameCollectionQuery
         },
         document::{dto_document_data::DTODocumentData, dto_document_schema::DTODocumentSchema},
         table::{
@@ -41,6 +40,7 @@ impl ControllerCollection {
         router
             .route("/api/v1/service/:service/data-base/:data_base/collection/:collection/import", post(Self::import))
             .layer(DefaultBodyLimit::max(52428800 ))
+            .route("/api/v1/service/:service/data-base/:data_base/schema", get(Self::schema_definition))
             .route("/api/v1/service/:service/data-base/:data_base/collection", get(Self::find_all))
             .route("/api/v1/service/:service/data-base/:data_base/collection", post(Self::insert))
             .route("/api/v1/service/:service/data-base/:data_base/collection/:collection", delete(Self::delete))
@@ -53,6 +53,26 @@ impl ControllerCollection {
             .route("/api/v1/service/:service/data-base/:data_base/collection/:collection/rename", post(Self::rename))
             .route("/api/v1/service/:service/data-base/:data_base/collection/:collection/export", get(Self::export))
             .route_layer(middleware::from_fn(handler::autentication_handler))
+    }
+
+    async fn schema_definition(Path((service, data_base)): Path<(String, String)>) -> Result<Json<DTOCollectionDefinition>, impl IntoResponse> {
+        let result = utils::find_service(&service).await;
+        if let Err(error) = result {
+            return Err(error.into_response());
+        }
+
+        let result = result.unwrap();
+        let mut locked_result = result.lock().await;
+
+        let query = DataBaseQuery::from(data_base);
+
+        let definition = locked_result.data_base_schema(&query).await;
+        if let Err(error) = definition {
+            let exception = ApiException::from(StatusCode::INTERNAL_SERVER_ERROR.as_u16(), error);
+            return Err(exception.into_response());
+        }
+        
+        Ok(Json(DTOCollectionDefinition::from(definition.unwrap())))
     }
 
     async fn find_all(Path((service, data_base)): Path<(String, String)>) -> Result<Json<Vec<String>>, impl IntoResponse> {
