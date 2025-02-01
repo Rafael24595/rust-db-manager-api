@@ -14,9 +14,9 @@ impl DTODocumentData {
     pub fn from(document: &DocumentData) -> Self {
         Self {
             format: document.format().to_string(),
-            data_base: document.data_base(),
-            collection: document.collection(),
-            document: document.document(),
+            data_base: document.data_base().to_string(),
+            collection: document.collection().to_string(),
+            document: document.document().to_string(),
         }
     }
 

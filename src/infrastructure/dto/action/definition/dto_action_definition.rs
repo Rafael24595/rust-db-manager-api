@@ -30,8 +30,8 @@ impl DTOActionDefinition {
         }
 
         Self {
-            action: action.action(),
-            title: action.title(),
+            action: action.action().to_string(),
+            title: action.title().to_string(),
             data: data,
             form: form
         }

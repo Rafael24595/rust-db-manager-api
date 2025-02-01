@@ -14,7 +14,7 @@ impl DTOServiceLite {
     
     pub fn from(service: &DBServiceLite) -> Self {
         Self {
-            name: service.name(), 
+            name: service.name().to_string(), 
             protected: service.is_protected(),
             category: DTOServiceCategoryLite::from(&service.category())
         }

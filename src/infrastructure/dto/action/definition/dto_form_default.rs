@@ -11,8 +11,8 @@ impl DTOFormDefault {
     
     pub fn from(default: &FormDefault) -> Self {
         Self {
-            key: default.key(),
-            value: default.value()
+            key: default.key().to_string(),
+            value: default.value().to_string()
         }
     }
 

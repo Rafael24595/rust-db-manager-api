@@ -16,9 +16,9 @@ impl DTOFilterAttributeDefinition {
     
     pub fn from(attribute: &FilterAttributeDefinition) -> Self {
         Self {
-            code: attribute.code(),
-            name: attribute.name(),
-            description: attribute.description(),
+            code: attribute.code().to_string(),
+            name: attribute.name().to_string(),
+            description: attribute.description().to_string(),
             values: attribute.values().iter()
                 .map(|a| DTOFilterAttributeDefaultDefinition::from(a))
                 .collect(),

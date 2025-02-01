@@ -17,7 +17,7 @@ impl DTOServiceCategory {
     pub fn from(connection: ConnectionData) -> Self {
         Self {
             category: connection.category().to_string(),
-            connection: connection.connection(),
+            connection: connection.connection().to_string(),
             resources: connection.category().resources()
         }
     }

@@ -13,7 +13,7 @@ impl DTOTableDefinition {
 
     pub fn from(table: &TableDefinition) -> Self {
         Self {
-            title: table.title(),
+            title: table.title().to_string(),
             rows: table.rows().iter()
                 .map(|r| DTOTableRowDefinition::from(r))
                 .collect()

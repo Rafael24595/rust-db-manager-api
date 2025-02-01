@@ -12,8 +12,8 @@ impl DTOFilterAttributeDefaultDefinition {
     
     pub fn from(attribute: &FilterAttributeDefaultDefinition) -> Self {
         Self {
-            key: attribute.key(),
-            value: attribute.value(),
+            key: attribute.key().to_string(),
+            value: attribute.value().to_string(),
             default: attribute.default()
         }
     }

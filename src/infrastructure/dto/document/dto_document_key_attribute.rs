@@ -12,8 +12,8 @@ impl DTODocumentKeyAttribute {
     
     pub fn from(attribute: &DocumentKeyAttribute) -> Self {
         Self {
-            key: attribute.key(),
-            value: attribute.value()
+            key: attribute.key().to_string(),
+            value: attribute.value().to_string()
         }
     }
 

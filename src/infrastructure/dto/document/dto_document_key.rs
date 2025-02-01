@@ -18,8 +18,8 @@ impl DTODocumentKey {
 
     pub fn from(key: &DocumentKey) -> Self {
         Self {
-            name: key.name(),
-            value: key.value(),
+            name: key.name().to_string(),
+            value: key.value().to_string(),
             json_type: key.json_type().to_string(),
             attributes: key.attributes().iter()
                 .map(|a| DTODocumentKeyAttribute::from(a))

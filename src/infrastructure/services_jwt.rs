@@ -30,7 +30,7 @@ impl ServicesJWT {
 
     pub fn sign_services(services: Vec<DBService>) -> Result<Cookie, AuthException> {
         let s_key = services.iter()
-            .map(|s| s.salt())
+            .map(|s| s.salt().to_string())
             .collect::<Vec<String>>()
             .join("#");
 
@@ -41,7 +41,7 @@ impl ServicesJWT {
         }
         
         let collection = services.iter()
-            .map(|s| s.name())
+            .map(|s| s.name().to_string())
             .collect::<Vec<String>>()
             .join("-");
         
@@ -88,7 +88,7 @@ impl ServicesJWT {
     pub async fn verify(token: &str) -> Result<Vec<DBService>, AuthException> {
         let services = Self::find_services(token).await?;
         let salt = services.iter()
-            .map(|s| s.salt())
+            .map(|s| s.salt().to_string())
             .collect::<Vec<String>>()
             .join("#");
 

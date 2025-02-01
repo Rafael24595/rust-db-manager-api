@@ -15,8 +15,8 @@ impl DTOActionForm {
     
     pub fn from(action: &ActionForm) -> Self {
         Self {
-            code: action.code(),
-            title: action.title(),
+            code: action.code().to_string(),
+            title: action.title().as_ref().cloned(),
             sw_vector: action.is_vector(),
             fields: action.fields().iter()
                 .map(|f| DTOFormFieldDefinition::from(f))

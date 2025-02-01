@@ -50,7 +50,7 @@ impl BuilderCookie {
                 },
                 "samesite" => cookie.same_site = {
                     let string_samesite= value.unwrap_or_default();
-                    let samesite = SameSite::from_string(&string_samesite.clone());
+                    let samesite = SameSite::from_string(&string_samesite);
                     if samesite.is_none() {
                         let message = String::from(format!("Unknown Same Site value: '{}'", string_samesite));
                         return Err(AuthException::new_reset(422, message));

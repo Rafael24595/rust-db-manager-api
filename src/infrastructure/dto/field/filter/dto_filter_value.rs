@@ -23,7 +23,7 @@ impl DTOFilterValue {
         }
 
         let mut children = Vec::new();
-        for child in self.children.clone() {
+        for child in self.children.to_vec() {
             children.push(child.from_dto()?);
         }
 

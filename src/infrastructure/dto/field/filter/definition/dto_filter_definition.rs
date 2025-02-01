@@ -14,8 +14,8 @@ impl DTOFilterDefinition {
 
     pub fn from(schema: &FilterDefinition) -> Self {
         Self {
-            query_type: schema.query_type(),
-            query_example: schema.query_example(),
+            query_type: schema.query_type().to_string(),
+            query_example: schema.query_example().to_string(),
             attributes: schema.attributes().iter()
                 .map(|f| DTOFilterAttributeDefinition::from(f))
                 .collect()

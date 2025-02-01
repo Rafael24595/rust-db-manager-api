@@ -11,7 +11,7 @@ impl DTOTableFieldDefinition {
     
     pub fn from(field: &TableFieldDefinition) -> Self {
         Self {
-            data: field.data(),
+            data: field.data().to_string(),
             sw_title: field.is_title()
         }
     }

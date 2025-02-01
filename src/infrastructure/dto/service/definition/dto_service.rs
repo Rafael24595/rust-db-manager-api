@@ -16,11 +16,11 @@ impl DTOService {
     
     pub fn from(service: DBService) -> Self {
         Self {
-            name: service.name(),
-            owner: service.owner(),
+            name: service.name().to_string(),
+            owner: service.owner().to_string(),
             protected: service.is_protected(),
             timestamp: service.timestamp(),
-            connection_data: DTOServiceCategory::from(service.connection_data())
+            connection_data: DTOServiceCategory::from(service.connection_data().clone())
         }
     }
 

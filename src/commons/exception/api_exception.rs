@@ -24,14 +24,14 @@ impl ApiException {
     pub fn from(status: u16, exception: ConnectException) -> ApiException {
         ApiException {
             status: status,
-            message: exception.message()
+            message: exception.message().to_string()
         }
     }
 
     pub fn from_configuration_exception(status: u16, exception: ConfigurationException) -> ApiException {
         ApiException {
             status: status,
-            message: exception.message()
+            message: exception.message().to_string()
         }
     }
 
@@ -57,11 +57,11 @@ impl ApiException {
     }
     
     pub fn status(&self) -> u16 {
-        return self.status;
+        self.status
     }
 
-    pub fn message(&self) -> String {
-        return self.message.clone();
+    pub fn message(&self) -> &str {
+        &self.message
     }
 
 }

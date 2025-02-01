@@ -15,10 +15,10 @@ impl DTOTableDataField {
     pub fn from(data: &TableDataField) -> Self {
         Self {
             order: data.order(),
-            name: data.name(),
-            value: data.value(),
+            name: data.name().to_string(),
+            value: data.value().to_string(),
             data_type: data.data_type().to_string(),
-            json_type: data.json_type(),
+            json_type: data.json_type().to_string(),
         }
     }
 

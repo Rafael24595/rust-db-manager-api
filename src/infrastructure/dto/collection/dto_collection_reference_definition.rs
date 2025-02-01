@@ -5,14 +5,16 @@ use serde::Serialize;
 pub struct DtoCollectionReferenceDefinition {
     collection: String,
     fields: Vec<String>,
+    cascade: bool
 }
 
 impl DtoCollectionReferenceDefinition {
     
     pub fn from(reference: &CollectionReferenceDefinition) -> Self {
         Self {
-            collection: reference.collection(),
-            fields: reference.fields().clone()
+            collection: reference.collection().to_string(),
+            fields: reference.fields().clone(),
+            cascade: reference.cascade()
         }
     }
 

@@ -15,7 +15,7 @@ impl DTODocumentSchema {
     
     pub fn from(schema: &DocumentSchema) -> Self {
         Self {
-            comments: schema.comments(),
+            comments: schema.comments().to_vec(),
             sw_relational: schema.is_relational(),
             sw_strict: schema.is_strict(),
             fields: schema.fields().iter()

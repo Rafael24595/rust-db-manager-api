@@ -15,7 +15,7 @@ impl DTOTableDataGroup {
     pub fn from(data: &TableDataGroup) -> Self {
         Self {
             order: data.order(),
-            name: data.name(),
+            name: data.name().to_string(),
             fields: data.fields().iter()
                 .map(|f| DTOTableDataField::from(f))
                 .collect()

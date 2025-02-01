@@ -14,8 +14,8 @@ impl DTOFieldAttributeDefinition {
     
     pub fn from(attribute: &FieldAttributeDefinition) -> Self {
         Self {
-            name: attribute.name(),
-            code: attribute.code(),
+            name: attribute.name().to_string(),
+            code: attribute.code().to_string(),
             values: attribute.values().iter()
                 .map(|a| DTOFieldAttributeDefaultDefinition::from(a))
                 .collect()

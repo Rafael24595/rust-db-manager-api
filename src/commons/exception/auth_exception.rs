@@ -26,7 +26,7 @@ impl AuthException {
     pub fn from(status: u16, exception: ApiException, reset: bool) -> AuthException {
         AuthException {
             status: status,
-            message: exception.message(),
+            message: exception.message().to_string(),
             reset: reset
         }
     }
@@ -34,7 +34,7 @@ impl AuthException {
     pub fn from_configuration_exception(status: u16, exception: ConfigurationException, reset: bool) -> AuthException {
         AuthException {
             status: status,
-            message: exception.message(),
+            message: exception.message().to_string(),
             reset: reset
         }
     }
@@ -56,15 +56,15 @@ impl AuthException {
     }
     
     pub fn status(&self) -> u16 {
-        return self.status;
+        self.status
     }
 
-    pub fn message(&self) -> String {
-        return self.message.clone();
+    pub fn message(&self) -> &str {
+        &self.message
     }
 
     pub fn reset(&self) -> bool {
-        return self.reset;
+        self.reset
     }
 
 }

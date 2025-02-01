@@ -17,8 +17,8 @@ impl DTOFormFieldDefinition {
     pub fn from(field: &FormFieldDefinition) -> Self {
         Self {
             order: field.order(),
-            code: field.code(),
-            name: field.name(),
+            code: field.code().to_string(),
+            name: field.name().to_string(),
             sw_key: field.is_key(),
             values: field.values().iter()
                 .map(|d| DTOFormDefault::from(d))

@@ -11,8 +11,8 @@ impl DTOFieldAttribute {
     
     pub fn from(attribute: &FieldAttribute) -> Self {
         Self {
-            key: attribute.key(),
-            value: attribute.value()
+            key: attribute.key().to_string(),
+            value: attribute.value().to_string()
         }
     }
 

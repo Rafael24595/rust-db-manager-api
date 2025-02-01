@@ -33,7 +33,7 @@ impl IntoResponse for ApiException {
     fn into_response(self) -> Response<Body> {
         Response::builder()
         .status(self.status())
-        .body(Body::from(self.message()))
+        .body(Body::from(self.message().to_string()))
         .unwrap()
     }
 
@@ -51,7 +51,7 @@ impl IntoResponse for AuthException {
         
         builder
         .status(self.status())
-        .body(Body::from(self.message()))
+        .body(Body::from(self.message().to_string()))
         .unwrap()
     }
 
@@ -130,17 +130,17 @@ pub(crate) fn document_keys_to_filter_element(documents: Vec<DocumentKey>) -> Fi
         match document.json_type() {
             EJSONType::STRING => {
                 filter.push(FilterElement::id_string(
-                    document.name(), 
-                    document.value(), 
+                    document.name().to_string(), 
+                    document.value().to_string(), 
                     document.attributes().iter()
-                    .map(|a| FilterValueAttribute::new(a.key(), a.value())).collect()));
+                    .map(|a| FilterValueAttribute::new(a.key().to_string(), a.value().to_string())).collect()));
             },
             EJSONType::NUMERIC => {
                 filter.push(FilterElement::id_numeric(
-                    document.name(), 
-                    document.value(), 
+                    document.name().to_string(), 
+                    document.value().to_string(), 
                     document.attributes().iter()
-                    .map(|a| FilterValueAttribute::new(a.key(), a.value())).collect()));
+                    .map(|a| FilterValueAttribute::new(a.key().to_string(), a.value().to_string())).collect()));
             },
             EJSONType::BOOLEAN => {
                 //TODO: error
