@@ -125,7 +125,7 @@ impl ControllerCollection {
         }
 
         let result = result.unwrap();
-        let locked_result = result.lock().await;
+        let mut locked_result = result.lock().await;
 
         let query = GenerateCollectionQuery::from_collection(data_base, collection);
 
