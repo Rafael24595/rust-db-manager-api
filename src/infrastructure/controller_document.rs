@@ -47,7 +47,7 @@ impl ControllerDocument {
         let result = result.unwrap();
         let mut locked_result = result.lock().await;
 
-        let query = DocumentQuery::from(data_base, collection, Some(params.limit), Some(params.offset), None);
+        let query = DocumentQuery::from(data_base, collection, Some(params.limit), Some(params.offset), Vec::new(), None);
 
         let data = locked_result.find_all(&query).await;
         if let Err(error) = data {
@@ -76,8 +76,7 @@ impl ControllerDocument {
             keys.push(key.unwrap());
         }
 
-        let filter = utils::document_keys_to_filter_element(keys);
-        let query = DocumentQuery::from_filter(data_base, collection, filter);
+        let query = DocumentQuery::from_keys(data_base, collection, keys);
 
         let r_document = locked_result.find(&query).await;
         if let Err(error) = r_document {
@@ -109,7 +108,7 @@ impl ControllerDocument {
             return Err(exception.into_response());
         }
 
-        let query = DocumentQuery::from(data_base, collection, Some(params.limit), Some(params.offset), Some(filter.unwrap()));
+        let query = DocumentQuery::from(data_base, collection, Some(params.limit), Some(params.offset), Vec::new(), Some(filter.unwrap()));
 
         let data = locked_result.find_query(&query).await;
         if let Err(error) = data {
@@ -159,8 +158,7 @@ impl ControllerDocument {
             keys.push(key.unwrap());
         }
 
-        let filter = utils::document_keys_to_filter_element(keys);
-        let query = DocumentQuery::from_filter(data_base, collection, filter);
+        let query = DocumentQuery::from_keys(data_base, collection, keys);
 
         let documents = locked_result.update(&query, &dto.document).await;
         if let Err(error) = documents {
@@ -192,8 +190,7 @@ impl ControllerDocument {
             keys.push(key.unwrap());
         }
 
-        let filter = utils::document_keys_to_filter_element(keys);
-        let query = DocumentQuery::from_filter(data_base, collection, filter);
+        let query = DocumentQuery::from_keys(data_base, collection, keys);
 
         let documents = locked_result.delete(&query).await;
         if let Err(error) = documents {

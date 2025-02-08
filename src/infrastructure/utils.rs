@@ -123,40 +123,6 @@ pub(crate) fn find_token(headers: HeaderMap) -> Result<Option<Cookie>, AuthExcep
     Ok(jar.unwrap().find(WebConfiguration::COOKIE_NAME))
 }
 
-pub(crate) fn document_keys_to_filter_element(documents: Vec<DocumentKey>) -> FilterElement {
-    let mut filter = FilterElement::new();
-
-    for document in documents {
-        match document.json_type() {
-            EJSONType::STRING => {
-                filter.push(FilterElement::id_string(
-                    document.name().to_string(), 
-                    document.value().to_string(), 
-                    document.attributes().iter()
-                    .map(|a| FilterValueAttribute::new(a.key().to_string(), a.value().to_string())).collect()));
-            },
-            EJSONType::NUMERIC => {
-                filter.push(FilterElement::id_numeric(
-                    document.name().to_string(), 
-                    document.value().to_string(), 
-                    document.attributes().iter()
-                    .map(|a| FilterValueAttribute::new(a.key().to_string(), a.value().to_string())).collect()));
-            },
-            EJSONType::BOOLEAN => {
-                //TODO: error
-            },
-            EJSONType::OBJECT => {
-                //TODO: error
-            },
-            EJSONType::ARRAY => {
-                //TODO: error
-            },
-        }
-    }
-
-    filter
-}
-
 pub(crate) fn not_found_exception() -> ApiException {
     ApiException::new(
         StatusCode::NOT_FOUND.as_u16(),

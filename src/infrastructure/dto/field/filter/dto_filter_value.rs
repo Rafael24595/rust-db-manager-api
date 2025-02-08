@@ -1,4 +1,4 @@
-use rust_db_manager_core::domain::filter::{e_filter_category::EFilterCategory, filter_value::FilterValue};
+use rust_db_manager_core::domain::filter::filter_value::FilterValue;
 use serde::Deserialize;
 
 use crate::commons::exception::api_exception::ApiException;
@@ -16,19 +16,13 @@ pub struct DTOFilterValue {
 impl DTOFilterValue {
     
     pub fn from_dto(&self) -> Result<FilterValue, ApiException> {
-        let category = EFilterCategory::from_string(&self.category);
-        if let None = category {
-            let exception = ApiException::new(422, String::from("Field category not recognized."));
-            return Err(exception);
-        }
-
         let mut children = Vec::new();
         for child in self.children.to_vec() {
             children.push(child.from_dto()?);
         }
 
         Ok(FilterValue::from(
-            category.unwrap(), 
+            self.category.clone(), 
             self.value.clone(), 
             self.attributes.iter().map(|c| c.from_dto()).collect(), 
             children

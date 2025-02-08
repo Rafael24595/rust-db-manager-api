@@ -70,10 +70,12 @@ pub mod infrastructure {
                 pub mod definition {
                     pub mod dto_filter_attribute_default_definition;
                     pub mod dto_filter_attribute_definition;
+                    pub mod dto_filter_definition_query;
                     pub mod dto_filter_definition;
+                    pub mod dto_filter_field_definition;
+                    pub mod dto_filter_fields_definition;
                 }
                 pub mod dto_filter_element;
-                pub mod dto_filter_resources;
                 pub mod dto_filter_value;
                 pub mod dto_filter_value_attribute;
             }
