@@ -8,6 +8,7 @@ use super::{dto_filter_element::DTOFilterElement, dto_filter_value_attribute::DT
 #[derive(Clone, Deserialize)]
 pub struct DTOFilterValue {
     category: String,
+    json_type: String,
     value: String,
     attributes: Vec<DTOFilterValueAttribute>,
     children: Vec<DTOFilterElement>
@@ -22,7 +23,8 @@ impl DTOFilterValue {
         }
 
         Ok(FilterValue::from(
-            self.category.clone(), 
+            self.category.clone(),
+            self.json_type.clone(),
             self.value.clone(), 
             self.attributes.iter().map(|c| c.from_dto()).collect(), 
             children

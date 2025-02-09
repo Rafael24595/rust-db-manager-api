@@ -17,15 +17,12 @@ use super::{
     dto::{
         action::{
             definition::dto_action_definition::DTOActionDefinition, generate::dto_action::DTOAction,
-        },
-        collection::{
+        }, collection::{
             dto_collection_definition::DTOCollectionDefinition, dto_generate_collection_query::DTOGenerateCollectionQuery, dto_rename_collection_query::DTORenameCollectionQuery
-        },
-        document::{dto_document_data::DTODocumentData, dto_document_schema::DTODocumentSchema},
-        table::{
+        }, document::{dto_document_data::DTODocumentData, dto_document_schema::DTODocumentSchema}, field::filter::definition::dto_filter_definition::DTOFilterDefinition, table::{
             definition::dto_table_definition::DTOTableDefinition,
             group::dto_table_data_group::DTOTableDataGroup,
-        },
+        }
     },
     handler,
     utils::{self, not_found},
@@ -50,6 +47,7 @@ impl ControllerCollection {
             .route("/api/v1/service/:service/data-base/:data_base/collection/:collection/action/:code", get(Self::find_action))
             .route("/api/v1/service/:service/data-base/:data_base/collection/:collection/action", post(Self::execute))
             .route("/api/v1/service/:service/data-base/:data_base/collection/:collection/schema", get(Self::schema))
+            .route("/api/v1/service/:service/data-base/:data_base/collection/:collection/schema/filter", get(Self::schema_filter))
             .route("/api/v1/service/:service/data-base/:data_base/collection/:collection/rename", post(Self::rename))
             .route("/api/v1/service/:service/data-base/:data_base/collection/:collection/export", get(Self::export))
             .route_layer(middleware::from_fn(handler::autentication_handler))
@@ -274,6 +272,26 @@ impl ControllerCollection {
         }
     
         Ok(Json(DTODocumentSchema::from(&schema.unwrap())))
+    }
+
+    async fn schema_filter(Path((service, data_base, collection)): Path<(String, String, String)>) -> Result<Json<DTOFilterDefinition>, impl IntoResponse> {
+        let result = utils::find_service(&service).await;
+        if let Err(error) = result {
+            return Err(error.into_response());
+        }
+
+        let result = result.unwrap();
+        let mut locked_result = result.lock().await;
+
+        let query = CollectionQuery::from(data_base, collection);
+
+        let schema = locked_result.filter_schema(&query).await;
+        if let Err(error) = schema {
+            let exception = ApiException::from(StatusCode::INTERNAL_SERVER_ERROR.as_u16(), error);
+            return Err(exception.into_response());
+        }
+    
+        Ok(Json(DTOFilterDefinition::from(&schema.unwrap())))
     }
 
     async fn rename(Path((service, data_base, collection)): Path<(String, String, String)>, Json(dto): Json<DTORenameCollectionQuery>) -> Result<StatusCode, impl IntoResponse> {
